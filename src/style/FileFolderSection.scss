@@ -1,0 +1,16 @@
+.file-folder-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  
+    label {
+      font-weight: bold;
+    }
+  
+    input[type="text"] {
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+  }
+  

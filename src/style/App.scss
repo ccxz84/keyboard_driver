@@ -1,0 +1,11 @@
+@import './FileFolderSection.scss';
+@import './DropdownSection.scss';
+@import './ButtonSection.scss';
+@import './SearchSection.scss';
+
+.App {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
