@@ -1,5 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
-import { StartRequest, StopRequest, InputClient } from '../../generated1/input_service';
+import { StartRequest, StopRequest, InputClient } from '../../generated/input_service';
 
 class MacroGrpcClient {
     // gRPC 클라이언트 인스턴스를 생성합니다.
