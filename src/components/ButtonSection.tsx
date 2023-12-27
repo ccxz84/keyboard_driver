@@ -4,7 +4,6 @@ import ButtonComponent from './ButtonComponent';
 const { ipcRenderer } = window.require('electron');
 
 const ButtonSection: React.FC = () => {
-
   const startRecording = () => {
     ipcRenderer.send('start-recording');
   };
@@ -15,10 +14,10 @@ const ButtonSection: React.FC = () => {
 
   return (
     <div className="button-section">
-      <ButtonComponent text={'녹화 시작'} onClick={startRecording} />
-      <ButtonComponent text={'녹화 종료'} onClick={endRecording } />
+      <ButtonComponent text="녹화 시작" onClick={startRecording} />
+      <ButtonComponent text="녹화 종료" onClick={endRecording} />
     </div>
   );
-}
+};
 
 export default ButtonSection;
