@@ -24,7 +24,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "dev": "npm run dev:proto && turbo run dev --parallel",
+    "dev": "npm run dev:proto && npm run dev:parallel",
+    "dev:parallel": "turbo run dev:tasks --parallel",
+    "dev:tasks": "npm run dev:tsc && npm run dev:vite && npm run dev:electron",
     "dev:proto": "powershell -ExecutionPolicy Bypass -File scripts/generate_proto.ps1",
     "dev:tsc": "tsc -p tsconfig.electron.json",
     "dev:vite": "vite --host 0.0.0.0",
