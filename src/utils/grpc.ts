@@ -1,5 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
-import { StartRequest, StopRequest, InputClient } from '../../generated/input_service';
+import { StartRequest, StopRequest, InputClient, ListRequest, StopReplayRequest, ReplayRequest, StatusResponse, SaveFilesResponse, GetMacroDetailRequest, GetMacroDetailResponse } from '../../generated/input_service';
 
 class MacroGrpcClient {
     // gRPC 클라이언트 인스턴스를 생성합니다.
@@ -7,8 +7,6 @@ class MacroGrpcClient {
   
   constructor() {
     this.client = new InputClient('10.55.0.1:50051', grpc.credentials.createInsecure());
-    // this.client.StartRecording.bind(this.client);
-    // this.client.StopRecording.bind(this.client);
   }
 
   startRequest(request: StartRequest) {
@@ -28,6 +26,87 @@ class MacroGrpcClient {
         return;
       }
       console.log('Response:', response);
+    });
+  }
+
+  listMacros() {
+    return new Promise<string[]>((resolve, reject) => {
+      const request = new ListRequest();
+      this.client.ListSaveFiles(request, (error, response) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(response ? response.filenames : [] );
+      });
+    });
+  }
+
+  replayMacroDebug(request: ReplayRequest) {
+    console.log('asdfa');
+    const call = this.client.ReplayMacroDebug(request);
+    return call;
+  }
+
+  // Stop replaying a macro
+  stopReplay(request: StopReplayRequest): Promise<StatusResponse> {
+    return new Promise((resolve, reject) => {
+      this.client.StopReplay(request, (error, response) => {
+        if (error) {
+          console.error('Error:', error);
+          reject(error);
+          return;
+        }
+        if (!response) {
+          // 여기서 undefined 처리
+          console.error('No response received');
+          reject(new Error('No response received'));
+          return;
+        }
+        console.log('Response:', response);
+        resolve(response);
+      });
+    });
+  }
+
+  listSaveFiles(request: ListRequest, callback: (error: grpc.ServiceError | null, response: SaveFilesResponse | null) => void) {
+    this.client.ListSaveFiles(request, (error, response) => {
+      if (error) {
+        console.error('Error in ListSaveFiles:', error);
+        callback(error, null);
+        return;
+      }
+  
+      if (response === undefined) {
+        // grpc.ServiceError 타입에 맞는 에러 객체 생성
+        const serviceError: grpc.ServiceError = {
+          name: 'NoResponseError',
+          message: 'No response received',
+          code: grpc.status.UNKNOWN,
+          details: 'No response received from gRPC service',
+          metadata: new grpc.Metadata()
+        };
+        console.error('No response received');
+        callback(serviceError, null);
+        return;
+      }
+  
+      console.log('Response from ListSaveFiles:', response);
+      callback(null, response);
+    });
+  }  
+  getMacroDetail(request: GetMacroDetailRequest): Promise<GetMacroDetailResponse> {
+    return new Promise((resolve, reject) => {
+      this.client.GetMacroDetail(request, (error, response) => {
+        if (error) {
+          console.error('Error:', error);
+          reject(error);
+          return;
+        }
+        if (response) {
+          resolve(response);
+        }
+      });
     });
   }
 }
