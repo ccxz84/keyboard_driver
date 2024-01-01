@@ -2,3 +2,5 @@ node_modules
 generated/
 electron.js
 grpc.js
+dist/
+dist_electron/

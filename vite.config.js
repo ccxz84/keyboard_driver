@@ -6,12 +6,5 @@ export default defineConfig({
   server: {
     port: 1624, // 원하는 포트 번호로 변경
   },
-  //   base: '/',
-  build: {
-    rollupOptions: {
-      input: {
-        main: './public/index.html',
-      },
-    },
-  },
+    base: './',
 });
