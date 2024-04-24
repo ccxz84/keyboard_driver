@@ -72,8 +72,7 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
   }
 
   const stopReplay = () => {
-    ipcRenderer.send('stop-replay');
-    onClose();
+    ipcRenderer.send('restart-driver');
   };
 
   return (

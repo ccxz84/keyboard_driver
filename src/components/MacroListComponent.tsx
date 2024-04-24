@@ -40,7 +40,7 @@ const MacroListComponent: React.FC<MacroListComponentProps> = ({ onClose, onMacr
 
   return (
     <ModalComponent isOpen={true} errorMessage={""}>
-      <div style={{ border: '1px solid' }}>
+      <div style={{ border: '1px solid', overflow: "auto", height: "150px" }}>
         {macros.map((filename) => (
           <div 
             style={{ 
