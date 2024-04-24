@@ -1,12 +1,33 @@
 import * as grpc from '@grpc/grpc-js';
-import { StartRequest, StopRequest, InputClient, ListRequest, StopReplayRequest, ReplayRequest, StatusResponse, SaveFilesResponse, GetMacroDetailRequest, GetMacroDetailResponse } from '../../generated/input_service';
+import { StartRequest, StopRequest, InputClient, ListRequest, StopReplayRequest, ReplayRequest, StatusResponse, SaveFilesResponse, GetMacroDetailRequest, GetMacroDetailResponse, DeleteMacrosRequest, ComplexReplayRequest } from '../../generated/input_service';
 
 class MacroGrpcClient {
     // gRPC 클라이언트 인스턴스를 생성합니다.
   client;
+  private address: string;
   
   constructor() {
-    this.client = new InputClient('10.55.0.1:50051', grpc.credentials.createInsecure());
+    this.address = '10.55.0.1';
+    this.client = new InputClient(`${this.address}:50051`, grpc.credentials.createInsecure());
+  }
+
+  updateAddress(newAddress: string) {
+    if (newAddress !== this.address) {
+      this.address = newAddress;
+      this.client = new InputClient(`${this.address}:50051`, grpc.credentials.createInsecure());
+      console.log(`Address updated to ${this.address}:50051`);
+    }
+  }
+
+  deleteMacros(request: DeleteMacrosRequest) {
+    console.log(request);
+    this.client.DeleteMacros(request, (error, response) => {
+      if (error) {
+        console.error('Error:', error);
+        return;
+      }
+      console.log('Response:', response);
+    });
   }
 
   startRequest(request: StartRequest) {
@@ -98,6 +119,20 @@ class MacroGrpcClient {
   getMacroDetail(request: GetMacroDetailRequest): Promise<GetMacroDetailResponse> {
     return new Promise((resolve, reject) => {
       this.client.GetMacroDetail(request, (error, response) => {
+        if (error) {
+          console.error('Error:', error);
+          reject(error);
+          return;
+        }
+        if (response) {
+          resolve(response);
+        }
+      });
+    });
+  }
+  startComplexReplay(request: ComplexReplayRequest): Promise<StatusResponse> {
+    return new Promise((resolve, reject) => {
+      this.client.StartComplexReplay(request, (error, response) => {
         if (error) {
           console.error('Error:', error);
           reject(error);

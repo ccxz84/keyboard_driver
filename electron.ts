@@ -1,8 +1,11 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import isDev from 'electron-is-dev';
 import path from 'path';
-import { GetMacroDetailRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
+import { ComplexReplayRequest, DeleteMacrosRequest, GetMacroDetailRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
 import MacroGrpcClient from './src/utils/grpc';
+import { ComplexReplayType } from './src/utils/type';
+import { RestartRequest } from './generated/restart_service';
+import RestartGrpcClient from './src/utils/restart-grpc';
 
 
 let mainWindow: BrowserWindow | null;
@@ -48,6 +51,11 @@ ipcMain.on('end-recording', () => {
     MacroGrpcClient.stopRequest(request);
 });
 
+ipcMain.on('remove-macro', (event, filenames) => {
+  const request = new DeleteMacrosRequest( { filenames } );
+  MacroGrpcClient.deleteMacros(request);
+});
+
 ipcMain.on('start-replay-debug', async (event, filename) => {
     const call = MacroGrpcClient.replayMacroDebug(new ReplayRequest({ filename }));
 
@@ -87,14 +95,6 @@ ipcMain.on('list-macros', async (event) => {
     });
 });
   
-ipcMain.on('stop-replay', (event) => {
-  MacroGrpcClient.stopReplay(new StopReplayRequest()).then((response) => {
-    event.sender.send('replay-stopped', response);
-  }).catch((error) => {
-    event.sender.send('grpc-error', error.message);
-  });
-});
-  
 // Electron의 메인 프로세스 (예: electron.ts)
 
 ipcMain.on('get-macro-detail', async (event, filename) => {
@@ -112,3 +112,23 @@ ipcMain.on('get-macro-detail', async (event, filename) => {
   }
 });
 
+ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
+  try {
+    const convertTasks = tasks.map(v => new ReplayTask(v));
+    const response = await MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount}));
+    event.sender.send('get-start-complex-replay-response', response, null);
+  } catch (error) {
+    console.error('Error getting macro detail:', error);
+    event.sender.send('get-start-complex-replay-response', null, error);
+  }
+});
+
+ipcMain.on('change-ip-address', async (event, ipAddress: string) => {
+  MacroGrpcClient.updateAddress(ipAddress);
+  RestartGrpcClient.updateAddress(ipAddress);
+});
+
+ipcMain.on('restart-driver', async (event) => {
+  const request = new RestartRequest();
+  RestartGrpcClient.restartRequest(request);
+});

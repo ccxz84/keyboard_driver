@@ -52,24 +52,27 @@ export function interpretKeyPressAndRelease(hidReports: number[][]): string[][] 
     }
     
     // 키 눌림 및 키 뗌 동작을 해석하는 함수
+    
     function interpretKeyPressAndRelease(hidReports: number[][]): string[][] {
         let previousKeys = new Set<number>();
         let keyActions: string[][] = [];
-    
+        console.log(hidReports);
+
         for (let report of hidReports) {
             let currentKeys = new Set(report.filter(code => code !== 0));
-    
+
             let pressedKeys = new Set([...currentKeys].filter(x => !previousKeys.has(x)));
             let releasedKeys = new Set([...previousKeys].filter(x => !currentKeys.has(x)));
-    
+
             let actions: string[] = [];
             pressedKeys.forEach(code => actions.push(`${interpretHIDReport(code)} 누름`));
             releasedKeys.forEach(code => actions.push(`${interpretHIDReport(code)} 뗌`));
-    
+
             previousKeys = currentKeys;
             keyActions.push(actions);
         }
-    
+
+        // 각 키 이벤트 사이에 공백이나 쉼표를 추가하여 join
         return keyActions;
     }
 

@@ -1,16 +1,15 @@
-// MacroListComponent.tsx
 import React, { useEffect, useState } from 'react';
 import ModalComponent from './ModalComponent';
 const { ipcRenderer } = window.require('electron');
 
 interface MacroListComponentProps {
   onClose: () => void;
-  onMacroSelected: (filename: string) => void; // 이 부분을 추가합니다.
+  onMacroSelected: (filename: string[]) => void; // 이 부분을 추가합니다.
 }
 
 const MacroListComponent: React.FC<MacroListComponentProps> = ({ onClose, onMacroSelected }) => {
   const [macros, setMacros] = useState<string[]>([]);
-  const [selectedMacro, setSelectedMacro] = useState<string | null>(null); // 추가된 state
+  const [selectedMacros, setSelectedMacros] = useState<string[]>([]);
 
   useEffect(() => {
     ipcRenderer.send('list-macros');
@@ -27,14 +26,16 @@ const MacroListComponent: React.FC<MacroListComponentProps> = ({ onClose, onMacr
   }, []);
 
   const handleMacroClick = (filename: string) => {
-    setSelectedMacro(filename); // 선택된 macro를 저장
+    if (selectedMacros.includes(filename)) {
+      setSelectedMacros(selectedMacros.filter(macro => macro !== filename)); // 선택 취소
+    } else {
+      setSelectedMacros([...selectedMacros, filename]); // 선택 추가
+    }
   };
 
   const handleConfirmClick = () => {
-    if (selectedMacro) {
-      console.log(`${selectedMacro} start`);
-      onMacroSelected(selectedMacro);
-    }
+    console.log(`Selected macros: ${selectedMacros.join(', ')} start`);
+    onMacroSelected(selectedMacros);
     onClose(); // 확정 버튼을 누른 후에 모달을 닫음
   };
 
@@ -46,7 +47,7 @@ const MacroListComponent: React.FC<MacroListComponentProps> = ({ onClose, onMacr
             style={{ 
               padding: '2px', 
               border: '1px solid', 
-              backgroundColor: filename === selectedMacro ? '#add8e6' : 'transparent' // 하이라이트 조건 추가
+              backgroundColor: selectedMacros.includes(filename) ? '#add8e6' : 'transparent'
             }} 
             key={filename} 
             onClick={() => handleMacroClick(filename)}
