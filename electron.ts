@@ -2,10 +2,9 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import isDev from 'electron-is-dev';
 import path from 'path';
 import { ComplexReplayRequest, DeleteMacrosRequest, GetMacroDetailRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
-import MacroGrpcClient from './src/utils/grpc';
+import GrpcClient from './src/utils/grpc';
 import { ComplexReplayType } from './src/utils/type';
 import { RestartRequest } from './generated/restart_service';
-import RestartGrpcClient from './src/utils/restart-grpc';
 
 
 let mainWindow: BrowserWindow | null;
@@ -43,21 +42,21 @@ app.on('activate', () => {
 
 ipcMain.on('start-recording', (event, fileName) => {
     const request = new StartRequest( { filename: fileName } );
-    MacroGrpcClient.startRequest(request);
+    GrpcClient.MacroGrpcClient.startRequest(request);
 });
 
 ipcMain.on('end-recording', () => {
     const request = new StopRequest();
-    MacroGrpcClient.stopRequest(request);
+    GrpcClient.MacroGrpcClient.stopRequest(request);
 });
 
 ipcMain.on('remove-macro', (event, filenames) => {
   const request = new DeleteMacrosRequest( { filenames } );
-  MacroGrpcClient.deleteMacros(request);
+ GrpcClient.MacroGrpcClient.deleteMacros(request);
 });
 
 ipcMain.on('start-replay-debug', async (event, filename) => {
-    const call = MacroGrpcClient.replayMacroDebug(new ReplayRequest({ filename }));
+    const call = GrpcClient.MacroGrpcClient.replayMacroDebug(new ReplayRequest({ filename }));
 
     call.on('data', (macroEvent) => {
       event.sender.send('macro-event', macroEvent.eventDescription);
@@ -76,7 +75,7 @@ ipcMain.on('start-replay-debug', async (event, filename) => {
 ipcMain.on('stop-replay', async (event) => {
     const request = new StopReplayRequest();
     try {
-      const response = await MacroGrpcClient.stopReplay(request);
+      const response = await GrpcClient.MacroGrpcClient.stopReplay(request);
       event.sender.send('replay-stopped', response);
     } catch (error) {
       event.sender.send('grpc-error', error);
@@ -86,7 +85,7 @@ ipcMain.on('stop-replay', async (event) => {
 // IPC handler to fetch the list of saved macros
 ipcMain.on('list-macros', async (event) => {
     const request = new ListRequest();
-    MacroGrpcClient.listSaveFiles(request, (error, response) => {
+    GrpcClient.MacroGrpcClient.listSaveFiles(request, (error, response) => {
         if (error) {
             event.sender.send('grpc-error', error.message);
             return;
@@ -99,7 +98,7 @@ ipcMain.on('list-macros', async (event) => {
 
 ipcMain.on('get-macro-detail', async (event, filename) => {
   try {
-    const response = await MacroGrpcClient.getMacroDetail(new GetMacroDetailRequest({ filename }));
+    const response = await GrpcClient.MacroGrpcClient.getMacroDetail(new GetMacroDetailRequest({ filename }));
     const events = response.events.map(event => {
       const delay = event.delay;
       const data = event.data;
@@ -115,7 +114,7 @@ ipcMain.on('get-macro-detail', async (event, filename) => {
 ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
   try {
     const convertTasks = tasks.map(v => new ReplayTask(v));
-    const response = await MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount}));
+    const response = await GrpcClient.MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount}));
     event.sender.send('get-start-complex-replay-response', response, null);
   } catch (error) {
     console.error('Error getting macro detail:', error);
@@ -124,11 +123,11 @@ ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], rep
 });
 
 ipcMain.on('change-ip-address', async (event, ipAddress: string) => {
-  MacroGrpcClient.updateAddress(ipAddress);
-  RestartGrpcClient.updateAddress(ipAddress);
+  GrpcClient.MacroGrpcClient.updateAddress(ipAddress);
+  GrpcClient.RestartGrpcClient.updateAddress(ipAddress);
 });
 
 ipcMain.on('restart-driver', async (event) => {
   const request = new RestartRequest();
-  RestartGrpcClient.restartRequest(request);
+  GrpcClient.RestartGrpcClient.restartRequest(request);
 });

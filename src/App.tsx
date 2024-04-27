@@ -13,9 +13,11 @@ const App: React.FC = () => {
   };
 
   const changeIpAddress = () => {
-    if (isValidIpAddress(ipAddress)) {
-      ipcRenderer.send('change-ip-address', ipAddress);
-      console.log('IP Address changed to:', ipAddress);
+    const ipToSet = isValidIpAddress(ipAddress) ? ipAddress : '10.55.0.1';
+
+    if (ipToSet) {
+      ipcRenderer.send('change-ip-address', ipToSet);
+      console.log('IP Address changed to:', ipToSet);
     } else {
       console.error('Invalid IP address:', ipAddress);
     }
