@@ -31,9 +31,9 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
   };
 
   // modalOpenList의 특정 인덱스 값을 false로 설정하는 함수
-  const handleModalAtIndex = (index: number, isOpen: boolean) => {
+  const handleModalAtIndex = (index: number, _isOpen: boolean) => {
     const updatedOpenList = modalOpenList.map((isOpen, idx) => 
-      index === idx ? false : isOpen
+      index === idx ? _isOpen : isOpen
     );
     setModalOpenList(updatedOpenList);
   };
@@ -93,11 +93,7 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
           {complexReplayRequest.map((task, index) => (
             <tr key={index}>
               <td>
-                <input
-                  type="text"
-                  value={task.filename}
-                  onChange={(e) => updateFilenameAtIndex(index, e.target.value)}
-                />
+                {task.filename}
               </td>
               <td>
                 <input
@@ -131,7 +127,7 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
       </table>
       <div className="modal-buttons-container">
         <button onClick={closeModal}>창 끄기</button>
-        <button onClick={stopReplay}>실행 중지</button>
+        <button onClick={stopReplay}>드라이버 리셋</button>
         <button onClick={() => {
           runComplexReplay(complexReplayRequest, repeatCount);
         }}>실행</button>
