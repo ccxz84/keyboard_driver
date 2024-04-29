@@ -1,0 +1,1 @@
+usb.transfer_type == 0x01 && usb.endpoint_address.direction == IN

@@ -63,7 +63,8 @@ const ButtonSection: React.FC =  () => {
   };
 
   const startComplexReplay = (complexReplayRequest: ComplexReplayType[], repeatCount: number) => {
-    ipcRenderer.send('start-complex-replay', complexReplayRequest, repeatCount)
+    // ipcRenderer.send('start-complex-replay', complexReplayRequest, repeatCount);
+    ipcRenderer.send('start-complex-replay-arduino', complexReplayRequest, repeatCount)
   }
 
   return (

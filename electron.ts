@@ -1,10 +1,11 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import isDev from 'electron-is-dev';
 import path from 'path';
-import { ComplexReplayRequest, DeleteMacrosRequest, GetMacroDetailRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
+import { ComplexReplayRequest, DeleteMacrosRequest, GetMacroDetailRequest, GetMacroDetailResponse, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
 import GrpcClient from './src/utils/grpc';
 import { ComplexReplayType } from './src/utils/type';
 import { RestartRequest } from './generated/restart_service';
+import { HidReports, makeArduinoKeyboardCode } from './src/utils/arduino';
 
 
 let mainWindow: BrowserWindow | null;
@@ -99,11 +100,7 @@ ipcMain.on('list-macros', async (event) => {
 ipcMain.on('get-macro-detail', async (event, filename) => {
   try {
     const response = await GrpcClient.MacroGrpcClient.getMacroDetail(new GetMacroDetailRequest({ filename }));
-    const events = response.events.map(event => {
-      const delay = event.delay;
-      const data = event.data;
-      return { delay, data };
-    });
+    const events = converMessage(response);
     event.sender.send('get-macro-detail-response', events, null);
   } catch (error) {
     console.error('Error getting macro detail:', error);
@@ -111,11 +108,70 @@ ipcMain.on('get-macro-detail', async (event, filename) => {
   }
 });
 
+function converMessage(response: GetMacroDetailResponse) {
+  const events = response.events.map(event => {
+    const delay = event.delay;
+    const data = event.data;
+    return { delay, data };
+  });
+
+  return events;
+}
+
 ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
   try {
     const convertTasks = tasks.map(v => new ReplayTask(v));
     const response = await GrpcClient.MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount}));
     event.sender.send('get-start-complex-replay-response', response, null);
+  } catch (error) {
+    console.error('Error getting macro detail:', error);
+    event.sender.send('get-start-complex-replay-response', null, error);
+  }
+});
+
+ipcMain.on('start-complex-replay-arduino', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
+  function convertUint8ArrayToNumberArray(data: Uint8Array): number[] {
+    return Array.from(data);
+  }
+  try {
+    // const convertTasks = tasks.map(v => new ReplayTask(v));
+    // const response = await GrpcClient.MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount}));
+    // event.sender.send('get-start-complex-replay-response', response, null);
+
+    // const hidReports: HidReports[] = [];
+
+    // tasks.forEach(async value => {
+    //   const response = await GrpcClient.MacroGrpcClient.getMacroDetail(new GetMacroDetailRequest({ filename: value.filename }));
+
+    //   const events = converMessage(response);
+
+    //   const allKeyEvents = events.map(event => convertUint8ArrayToNumberArray(event.data));
+    //   const allDelay = events.map(event => event.delay);
+
+    //   const hidReport: HidReports = { hidReports: allKeyEvents, runTime: allDelay, delayAfter: value.delayAfter};
+      
+    //   hidReports.push(hidReport);
+    // });
+
+    // const code = makeArduinoKeyboardCode(hidReports, repeatCount);
+
+    // console.log(code);
+
+    const promises = tasks.map(async (value) => {
+      const response = await GrpcClient.MacroGrpcClient.getMacroDetail(new GetMacroDetailRequest({ filename: value.filename }));
+      const events = converMessage(response);
+      const allKeyEvents = events.map(event => convertUint8ArrayToNumberArray(event.data));
+      const allDelay = events.map(event => event.delay);
+      return {
+        hidReports: allKeyEvents,
+        runTime: allDelay,
+        delayAfter: value.delayAfter
+      };
+    });
+
+    const hidReports = await Promise.all(promises); // 모든 비동기 작업이 완료될 때까지 기다립니다.
+    const code = makeArduinoKeyboardCode(hidReports, repeatCount);
+    console.log(code);
   } catch (error) {
     console.error('Error getting macro detail:', error);
     event.sender.send('get-start-complex-replay-response', null, error);

@@ -1,4 +1,15 @@
 export function interpretKeyPressAndRelease(hidReports: number[][]): string[][] {
+    const MODIFIER_KEYS: Record<number, string>  = {
+        0x01: 'Left Ctrl',
+        0x02: 'Left Shift',
+        0x04: 'Left Alt',
+        0x08: 'Left Win',
+        0x10: 'Right Ctrl',
+        0x20: 'Right Shift',
+        0x40: 'Right Alt',
+        0x80: 'Right GUI'
+    };
+
     const HID_KEY_CODES: { [key: string]: number } = {
         'a': 0x04, 'b': 0x05, 'c': 0x06, 'd': 0x07,
         'e': 0x08, 'f': 0x09, 'g': 0x0A, 'h': 0x0B,
@@ -10,8 +21,9 @@ export function interpretKeyPressAndRelease(hidReports: number[][]): string[][] 
         '1': 0x1E, '2': 0x1F, '3': 0x20, '4': 0x21,
         '5': 0x22, '6': 0x23, '7': 0x24, '8': 0x25,
         '9': 0x26, '0': 0x27,
-        'Enter': 0x28, 'Esc': 0x29, 'Backspace': 0x2A, 'Tab': 0x2B,
-        'Space': 0x2C, 'Minus': 0x2D, 'Equal': 0x2E, 'LeftBracket': 0x2F,
+        'Space': 0x44,
+        'Enter': 0x28, 'Esc': 0x29, 'Backspace': 0x2A, 'Tab': 0x2B, 
+        'Minus': 0x2D, 'Equal': 0x2E, 'LeftBracket': 0x2F,
         'RightBracket': 0x30, 'Backslash': 0x31, 'NonUSHash': 0x32, 'Semicolon': 0x33,
         'Quote': 0x34, 'Grave': 0x35, 'Comma': 0x36, 'Period': 0x37,
         'Slash': 0x38, 'CapsLock': 0x39,
@@ -50,31 +62,55 @@ export function interpretKeyPressAndRelease(hidReports: number[][]): string[][] 
     function interpretHIDReport(hidCode: number): string {
         return KEY_NAMES[hidCode] || "Unknown key";
     }
-    
-    // 키 눌림 및 키 뗌 동작을 해석하는 함수
-    
+
+    function interpretModifierByte(modifierByte: number): string[] {
+        let activeModifiers: string[] = [];
+        for (let modifier in MODIFIER_KEYS) {
+            let mask = parseInt(modifier);
+            if (modifierByte & mask) {
+                activeModifiers.push(MODIFIER_KEYS[modifier]);
+            }
+        }
+        return activeModifiers;
+    }
+
     function interpretKeyPressAndRelease(hidReports: number[][]): string[][] {
         let previousKeys = new Set<number>();
         let keyActions: string[][] = [];
-        console.log(hidReports);
+        let previousModiKey = 0;
 
         for (let report of hidReports) {
-            let currentKeys = new Set(report.filter(code => code !== 0));
+            let currentModiKey = report[0];
+            let keyCodes = report.slice(2); // 첫 번째 두 바이트는 수정자와 예약 바이트
+            let currentKeys = new Set(keyCodes.filter(code => code !== 0));
 
             let pressedKeys = new Set([...currentKeys].filter(x => !previousKeys.has(x)));
             let releasedKeys = new Set([...previousKeys].filter(x => !currentKeys.has(x)));
-
             let actions: string[] = [];
+
+            // 키 이벤트 추가
             pressedKeys.forEach(code => actions.push(`${interpretHIDReport(code)} 누름`));
             releasedKeys.forEach(code => actions.push(`${interpretHIDReport(code)} 뗌`));
 
+            // 수정자 키 변화 감지
+            if (currentModiKey !== previousModiKey) {
+                let previousModifiers = interpretModifierByte(previousModiKey);
+                let currentModifiers = interpretModifierByte(currentModiKey);
+
+                previousModifiers.filter(mod => !currentModifiers.includes(mod))
+                    .forEach(mod => actions.push(`${mod} 뗌`));
+                currentModifiers.filter(mod => !previousModifiers.includes(mod))
+                    .forEach(mod => actions.push(`${mod} 누름`));
+            }
+
             previousKeys = currentKeys;
+            previousModiKey = currentModiKey;
             keyActions.push(actions);
         }
 
-        // 각 키 이벤트 사이에 공백이나 쉼표를 추가하여 join
         return keyActions;
     }
 
     return interpretKeyPressAndRelease(hidReports);
 }
+

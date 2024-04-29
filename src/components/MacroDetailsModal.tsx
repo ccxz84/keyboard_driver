@@ -43,6 +43,9 @@ const MacroDetailsModal: React.FC<MacroDetailsModalProps> = ({ isOpen, filename,
         const allKeyEvents = response.map(event => convertUint8ArrayToNumberArray(event.data));
         const interpretedEvents = interpretKeyPressAndRelease(allKeyEvents);
 
+        console.log(interpretedEvents);
+        console.log(times);
+
         // 원본 HID 리포트 데이터와 해석된 문자열 이벤트를 결합
         const combinedDetails = response.map((event, index) => {
           return {
