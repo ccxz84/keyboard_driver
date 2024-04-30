@@ -20,7 +20,8 @@
       "dist/**/*",
       "electron.js",
       "generated",
-      "src/utils/grpc.js"
+      "src/utils/grpc.js",
+      "src/utils/arduino.js"
     ]
   },
   "dependencies": {
@@ -39,6 +40,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-modal": "^3.16.1",
+    "serialport": "^12.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.2.2",
     "usb": "^2.11.0",

@@ -64,6 +64,11 @@ const ButtonSection: React.FC =  () => {
 
   const startComplexReplay = (complexReplayRequest: ComplexReplayType[], repeatCount: number) => {
     // ipcRenderer.send('start-complex-replay', complexReplayRequest, repeatCount);
+    ipcRenderer.send('start-complex-replay', complexReplayRequest, repeatCount)
+  }
+
+  const startComplexReplayArduino = (complexReplayRequest: ComplexReplayType[], repeatCount: number) => {
+    // ipcRenderer.send('start-complex-replay', complexReplayRequest, repeatCount);
     ipcRenderer.send('start-complex-replay-arduino', complexReplayRequest, repeatCount)
   }
 
@@ -99,7 +104,7 @@ const ButtonSection: React.FC =  () => {
       )}
       <ButtonComponent text="복잡한 실행"  onClick={() => handleComplexReplay(true)} />
       {isComplexReplayModalOpen && (
-        <ComplexReplayComponent onClose={() => handleComplexReplay(false)} runComplexReplay={startComplexReplay} />
+        <ComplexReplayComponent onClose={() => handleComplexReplay(false)} runComplexReplay={startComplexReplay} runComplexReplayArduino={startComplexReplayArduino} />
       )}
     </div>
   );

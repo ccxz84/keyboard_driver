@@ -125,6 +125,7 @@ export function makeArduinoKeyboardCode(hidReports: HidReports[], loop: number):
     void setup() {
         Keyboard.begin();
         Serial.begin(9540);
+        randomSeed(analogRead(0));
         delay(1000); // 초기 지연 시간
 
         for (int i = 0; i < ${loop}; ++i) {
@@ -138,10 +139,12 @@ export function makeArduinoKeyboardCode(hidReports: HidReports[], loop: number):
         console.log(changeKeyCodes);
 
         changeKeyCodes.forEach((keyCode, index) => {
-            const diffTime = runTime[index] - prevTime;
+            const diffTime = Math.floor(runTime[index] - prevTime);
+            // const diffTime = Math.floor(runTime[index] - prevTime);
 
             if (diffTime > 0) {
-                code += `  delay(${diffTime / 1000000});\n`
+                code += `  delay(random(${(Math.floor(diffTime / 1000000)-10) > 0 ? (Math.floor(diffTime / 1000000)-10) : 0}, ${Math.floor(diffTime / 1000000)+10}));\n`
+                // code += `  delay(${diffTime / 1000000});\n`
             }
 
             keyCode.forEach(value => {
@@ -152,10 +155,10 @@ export function makeArduinoKeyboardCode(hidReports: HidReports[], loop: number):
                 }
                 
             });
-            prevTime = diffTime;
+            prevTime = runTime[index];
         })
 
-        code += `  delay(${report.delayAfter * 1000}); // 리포트 후 대기 시간\n`;
+        code += `  delay(${report.delayAfter}); // 리포트 후 대기 시간\n`;
     });
 
     code += 

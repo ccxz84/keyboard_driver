@@ -1,8 +1,8 @@
 const fs = require('fs');
 
 // 파일 경로 입력받기
-const filePath1 = './case10/1.txt';
-const filePath2 = './case10/2.txt';
+const filePath1 = './case11/3.txt';
+const filePath2 = './case11/4.txt';
 
 // 시간 차이 계산 및 파일 저장 함수
 function processFile(filePath, outputFilePath) {

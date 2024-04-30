@@ -8,9 +8,10 @@ const { ipcRenderer } = window.require('electron');
 interface ComplexReplayComponentProps {
   onClose: () => void;
   runComplexReplay: (complexReplayRequest: ComplexReplayType[], repeatCount: number) => void;
+  runComplexReplayArduino: (complexReplayRequest: ComplexReplayType[], repeatCount: number) => void;
 }
 
-const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose, runComplexReplay }) => {
+const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose, runComplexReplay, runComplexReplayArduino }) => {
   const [complexReplayRequest, setComplexReplayRequest] = useState<ComplexReplayType[]>([]);
   const [modalOpenList, setModalOpenList] = useState<boolean[]>([]);
   const [repeatCount, setRepeatCount] = useState<number>(1);
@@ -72,6 +73,7 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
   }
 
   const stopReplay = () => {
+    ipcRenderer.send('stop-replay');
     ipcRenderer.send('restart-driver');
   };
 
@@ -131,6 +133,9 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
         <button onClick={() => {
           runComplexReplay(complexReplayRequest, repeatCount);
         }}>실행</button>
+        <button onClick={() => {
+          runComplexReplayArduino(complexReplayRequest, repeatCount);
+        }}>아두이노 실행</button>
       </div>
     </ModalComponent>
   );
