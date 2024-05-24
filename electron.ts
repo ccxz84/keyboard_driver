@@ -197,8 +197,8 @@ function converMessage(response: GetMacroDetailResponse) {
 
 ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
   try {
-    const convertTasks = tasks.map(v => new ReplayTask(v));
-    const response = await GrpcClient.MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount}));
+    const convertTasks = tasks.map(v => new ReplayTask({ ...v, repeatCount: v.repeatCount || 1 })); // Ensure repeatCount is set
+    const response = await GrpcClient.MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount }));
     event.sender.send('get-start-complex-replay-response', response, null);
   } catch (error) {
     console.error('Error getting macro detail:', error);

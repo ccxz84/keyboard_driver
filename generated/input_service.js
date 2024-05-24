@@ -961,6 +961,9 @@ class ReplayTask extends pb_1.Message {
             if ("delayAfter" in data && data.delayAfter != undefined) {
                 this.delayAfter = data.delayAfter;
             }
+            if ("repeatCount" in data && data.repeatCount != undefined) {
+                this.repeatCount = data.repeatCount;
+            }
         }
     }
     get filename() {
@@ -975,6 +978,12 @@ class ReplayTask extends pb_1.Message {
     set delayAfter(value) {
         pb_1.Message.setField(this, 2, value);
     }
+    get repeatCount() {
+        return pb_1.Message.getFieldWithDefault(this, 3, 0);
+    }
+    set repeatCount(value) {
+        pb_1.Message.setField(this, 3, value);
+    }
     static fromObject(data) {
         const message = new ReplayTask({});
         if (data.filename != null) {
@@ -982,6 +991,9 @@ class ReplayTask extends pb_1.Message {
         }
         if (data.delayAfter != null) {
             message.delayAfter = data.delayAfter;
+        }
+        if (data.repeatCount != null) {
+            message.repeatCount = data.repeatCount;
         }
         return message;
     }
@@ -993,6 +1005,9 @@ class ReplayTask extends pb_1.Message {
         if (this.delayAfter != null) {
             data.delayAfter = this.delayAfter;
         }
+        if (this.repeatCount != null) {
+            data.repeatCount = this.repeatCount;
+        }
         return data;
     }
     serialize(w) {
@@ -1001,6 +1016,8 @@ class ReplayTask extends pb_1.Message {
             writer.writeString(1, this.filename);
         if (this.delayAfter != 0)
             writer.writeInt32(2, this.delayAfter);
+        if (this.repeatCount != 0)
+            writer.writeInt32(3, this.repeatCount);
         if (!w)
             return writer.getResultBuffer();
     }
@@ -1015,6 +1032,9 @@ class ReplayTask extends pb_1.Message {
                     break;
                 case 2:
                     message.delayAfter = reader.readInt32();
+                    break;
+                case 3:
+                    message.repeatCount = reader.readInt32();
                     break;
                 default: reader.skipField();
             }

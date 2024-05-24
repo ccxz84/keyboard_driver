@@ -31,6 +31,13 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
     setComplexReplayRequest(updatedTasks);
   };
 
+  const updateRepeatCountAtIndex = (index: number, repeatCount: number) => {
+    const updatedTasks = complexReplayRequest.map((task, idx) =>
+      idx === index ? {...task, repeatCount} : task
+    );
+    setComplexReplayRequest(updatedTasks);
+  };
+
   // modalOpenList의 특정 인덱스 값을 false로 설정하는 함수
   const handleModalAtIndex = (index: number, _isOpen: boolean) => {
     const updatedOpenList = modalOpenList.map((isOpen, idx) => 
@@ -50,7 +57,7 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
   }
 
   const addRow = () => {
-    const newRow = {filename: '', delayAfter: 0};
+    const newRow = {filename: '', delayAfter: 0, repeatCount: 1};
     const updatedReplayRequest = [...complexReplayRequest, newRow];
 
     // 변경된 배열로 상태를 업데이트합니다.
@@ -88,6 +95,7 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
           <tr>
             <th>파일 이름</th>
             <th>딜레이</th>
+            <th>반복 횟수</th>
             <th>파일 선택</th>
           </tr>
         </thead>
@@ -102,6 +110,13 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
                   type="number"
                   value={task.delayAfter}
                   onChange={(e) => updateDelayAfterAtIndex(index, parseInt(e.target.value, 10))}
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  value={task.repeatCount}
+                  onChange={(e) => updateRepeatCountAtIndex(index, parseInt(e.target.value, 10))}
                 />
               </td>
               <td>

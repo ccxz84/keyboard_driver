@@ -1003,6 +1003,7 @@ export class ReplayTask extends pb_1.Message {
     constructor(data?: any[] | {
         filename?: string;
         delayAfter?: number;
+        repeatCount?: number;
     }) {
         super();
         pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
@@ -1012,6 +1013,9 @@ export class ReplayTask extends pb_1.Message {
             }
             if ("delayAfter" in data && data.delayAfter != undefined) {
                 this.delayAfter = data.delayAfter;
+            }
+            if ("repeatCount" in data && data.repeatCount != undefined) {
+                this.repeatCount = data.repeatCount;
             }
         }
     }
@@ -1027,9 +1031,16 @@ export class ReplayTask extends pb_1.Message {
     set delayAfter(value: number) {
         pb_1.Message.setField(this, 2, value);
     }
+    get repeatCount() {
+        return pb_1.Message.getFieldWithDefault(this, 3, 0) as number;
+    }
+    set repeatCount(value: number) {
+        pb_1.Message.setField(this, 3, value);
+    }
     static fromObject(data: {
         filename?: string;
         delayAfter?: number;
+        repeatCount?: number;
     }): ReplayTask {
         const message = new ReplayTask({});
         if (data.filename != null) {
@@ -1038,18 +1049,25 @@ export class ReplayTask extends pb_1.Message {
         if (data.delayAfter != null) {
             message.delayAfter = data.delayAfter;
         }
+        if (data.repeatCount != null) {
+            message.repeatCount = data.repeatCount;
+        }
         return message;
     }
     toObject() {
         const data: {
             filename?: string;
             delayAfter?: number;
+            repeatCount?: number;
         } = {};
         if (this.filename != null) {
             data.filename = this.filename;
         }
         if (this.delayAfter != null) {
             data.delayAfter = this.delayAfter;
+        }
+        if (this.repeatCount != null) {
+            data.repeatCount = this.repeatCount;
         }
         return data;
     }
@@ -1061,6 +1079,8 @@ export class ReplayTask extends pb_1.Message {
             writer.writeString(1, this.filename);
         if (this.delayAfter != 0)
             writer.writeInt32(2, this.delayAfter);
+        if (this.repeatCount != 0)
+            writer.writeInt32(3, this.repeatCount);
         if (!w)
             return writer.getResultBuffer();
     }
@@ -1075,6 +1095,9 @@ export class ReplayTask extends pb_1.Message {
                     break;
                 case 2:
                     message.delayAfter = reader.readInt32();
+                    break;
+                case 3:
+                    message.repeatCount = reader.readInt32();
                     break;
                 default: reader.skipField();
             }

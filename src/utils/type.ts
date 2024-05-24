@@ -6,4 +6,5 @@ export interface KeyEvent {
 export interface ComplexReplayType{
   filename: string;
   delayAfter: number;
+  repeatCount: number;
 }

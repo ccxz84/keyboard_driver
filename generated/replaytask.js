@@ -71,7 +71,8 @@ proto.ReplayTask.prototype.toObject = function(opt_includeInstance) {
 proto.ReplayTask.toObject = function(includeInstance, msg) {
   var f, obj = {
     filename: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    delayafter: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    delayafter: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    repeatcount: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
 
   if (includeInstance) {
@@ -116,6 +117,10 @@ proto.ReplayTask.deserializeBinaryFromReader = function(msg, reader) {
       var value = /** @type {number} */ (reader.readInt32());
       msg.setDelayafter(value);
       break;
+    case 3:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setRepeatcount(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -159,6 +164,13 @@ proto.ReplayTask.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
+  f = message.getRepeatcount();
+  if (f !== 0) {
+    writer.writeInt32(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -195,6 +207,24 @@ proto.ReplayTask.prototype.getDelayafter = function() {
  */
 proto.ReplayTask.prototype.setDelayafter = function(value) {
   return jspb.Message.setProto3IntField(this, 2, value);
+};
+
+
+/**
+ * optional int32 repeatCount = 3;
+ * @return {number}
+ */
+proto.ReplayTask.prototype.getRepeatcount = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.ReplayTask} returns this
+ */
+proto.ReplayTask.prototype.setRepeatcount = function(value) {
+  return jspb.Message.setProto3IntField(this, 3, value);
 };
 
 
