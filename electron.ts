@@ -4,7 +4,7 @@ import path from 'path';
 import { ComplexReplayRequest, DeleteMacrosRequest, GetMacroDetailRequest, GetMacroDetailResponse, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
 import GrpcClient from './src/utils/grpc';
 import { ComplexReplayType } from './src/utils/type';
-import { RestartRequest } from './generated/restart_service';
+import { RestartRequest, UpdateRequest, UpdateResponse } from './generated/restart_service';
 import { makeArduinoKeyboardCode } from './src/utils/arduino';
 import { exec } from 'node:child_process';
 import { SerialPort } from 'serialport';
@@ -174,18 +174,7 @@ ipcMain.on('list-macros', async (event) => {
   
 // Electron의 메인 프로세스 (예: electron.ts)
 
-ipcMain.on('get-macro-detail', async (event, filename) => {
-  try {
-    const response = await GrpcClient.MacroGrpcClient.getMacroDetail(new GetMacroDetailRequest({ filename }));
-    const events = converMessage(response);
-    event.sender.send('get-macro-detail-response', events, null);
-  } catch (error) {
-    console.error('Error getting macro detail:', error);
-    event.sender.send('get-macro-detail-response', null, error);
-  }
-});
-
-function converMessage(response: GetMacroDetailResponse) {
+function convertMessage(response: GetMacroDetailResponse) {
   const events = response.events.map(event => {
     const delay = event.delay;
     const data = event.data;
@@ -194,6 +183,17 @@ function converMessage(response: GetMacroDetailResponse) {
 
   return events;
 }
+
+ipcMain.on('get-macro-detail', async (event, filename) => {
+  try {
+    const response = await GrpcClient.MacroGrpcClient.getMacroDetail(new GetMacroDetailRequest({ filename }));
+    const events = convertMessage(response);
+    event.sender.send('get-macro-detail-response', events, null);
+  } catch (error) {
+    console.error('Error getting macro detail:', error);
+    event.sender.send('get-macro-detail-response', null, error);
+  }
+});
 
 ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
   try {
@@ -206,7 +206,8 @@ ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], rep
   }
 });
 
-ipcMain.on('start-complex-replay-arduino', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
+ipcMain.on('start-complex-replay-arduino', async (event, tasks:
+   ComplexReplayType[], repeatCount: number) => {
   function convertUint8ArrayToNumberArray(data: Uint8Array): number[] {
     return Array.from(data);
   }
@@ -215,7 +216,7 @@ ipcMain.on('start-complex-replay-arduino', async (event, tasks: ComplexReplayTyp
     const promises = tasks.map(async (value) => {
       const response = await GrpcClient.MacroGrpcClient.getMacroDetail(new GetMacroDetailRequest({ filename: value.filename }));
       console.log(response);
-      const events = converMessage(response);
+      const events = convertMessage(response);
       const allKeyEvents = events.map(event => convertUint8ArrayToNumberArray(event.data));
       const allDelay = events.map(event => event.delay);
       return {
@@ -259,4 +260,20 @@ ipcMain.on('change-ip-address', async (event, ipAddress: string) => {
 ipcMain.on('restart-driver', async (event) => {
   const request = new RestartRequest();
   GrpcClient.RestartGrpcClient.restartRequest(request);
+});
+
+ipcMain.on('request-update', async (event) => {
+  const call = GrpcClient.RestartGrpcClient.requestUpdate(new UpdateRequest());
+
+  call.on('data', (dataEvent: UpdateResponse) => {
+    event.sender.send('update-event', {progress: dataEvent.progress,  statusMessage: dataEvent.status_message});
+  });
+
+  call.on('end', () => {
+      event.sender.send('update-ended');
+  });
+
+  call.on('error', (error) => {
+      event.sender.send('update-grpc-error', error.message);
+  });
 });

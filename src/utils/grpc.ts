@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import { StartRequest, StopRequest, InputClient, ListRequest, StopReplayRequest, ReplayRequest, StatusResponse, SaveFilesResponse, GetMacroDetailRequest, GetMacroDetailResponse, DeleteMacrosRequest, ComplexReplayRequest } from '../../generated/input_service';
-import { RestartClient, RestartRequest } from '../../generated/restart_service';
+import { RestartClient, RestartRequest, UpdateRequest, UpdateResponse } from '../../generated/restart_service';
 
 class MacroGrpcClient {
     // gRPC 클라이언트 인스턴스를 생성합니다.
@@ -65,7 +65,6 @@ class MacroGrpcClient {
   }
 
   replayMacroDebug(request: ReplayRequest) {
-    console.log('asdfa');
     const call = this.client.ReplayMacroDebug(request);
     return call;
   }
@@ -173,6 +172,11 @@ class RestartGrpcClient {
       }
       console.log('Response:', response);
     });
+  }
+
+  requestUpdate(request: UpdateRequest) {
+    const call = this.client.RequestUpdate(request);
+    return call;
   }
 }
 

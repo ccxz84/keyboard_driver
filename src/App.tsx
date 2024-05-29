@@ -2,10 +2,12 @@ import React from 'react';
 import './style/App.scss';
 import ButtonSection from './components/ButtonSection';
 import ButtonComponent from './components/ButtonComponent';
+import UpdateComponent from './components/UpdateComponent';
 const { ipcRenderer } = window.require('electron');
 
 const App: React.FC = () => {
   const [ipAddress, setIpAddress] = React.useState<string>('');
+  const [isUpdateOpen, setIsUpdateOpen] = React.useState<boolean>(false);
 
   const isValidIpAddress = (ip: string) => {
     const ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
@@ -37,6 +39,13 @@ const App: React.FC = () => {
           <ButtonComponent text={"적용"} onClick={changeIpAddress} />
         </div>
         <ButtonComponent text={"리셋"} onClick={resetDriver} />
+        <ButtonComponent text={"업데이트"} onClick={() => { setIsUpdateOpen(true) }} />
+        {isUpdateOpen && (
+          <UpdateComponent isOpen={isUpdateOpen} onClose={() => {
+            setIsUpdateOpen(false);
+          }}>
+          </UpdateComponent>
+        )}
       </div>
     </div>
   );

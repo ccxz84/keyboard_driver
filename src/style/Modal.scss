@@ -62,6 +62,18 @@
     button {
       flex: 1; /* 버튼들이 남은 공간을 균등하게 채움 */
       margin: 0 0.5rem; /* 버튼 사이의 간격 조정 */
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s, border-color 0.3s;
+  
+      &:hover {
+        background-color: #0056b3;
+      }
   
       &:first-child {
         margin-left: 0;
@@ -70,8 +82,16 @@
       &:last-child {
         margin-right: 0;
       }
+  
+      &:disabled {
+        background-color: #e0e0e0;
+        border-color: #d3d3d3;
+        color: #a1a1a1;
+        cursor: not-allowed;
+      }
     }
   }
+  
   
   .error-message {
     color: #f44336; // 에러 색상
