@@ -1,21 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import ModalComponent from './ModalComponent';
+import Hangul from 'hangul-js';
 const { ipcRenderer } = window.require('electron');
 
 interface MacroListComponentProps {
   onClose: () => void;
-  onMacroSelected: (filename: string[]) => void; // 이 부분을 추가합니다.
+  onMacroSelected: (filename: string[]) => void; 
 }
 
 const MacroListComponent: React.FC<MacroListComponentProps> = ({ onClose, onMacroSelected }) => {
   const [macros, setMacros] = useState<string[]>([]);
   const [selectedMacros, setSelectedMacros] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   useEffect(() => {
     ipcRenderer.send('list-macros');
     
     const handleMacroListResponse = (event: any, receivedMacros: string[]) => {
-      setMacros(receivedMacros);
+      const sortedMacros = receivedMacros.sort();
+      setMacros(sortedMacros);
     };
 
     ipcRenderer.on('macro-list', handleMacroListResponse);
@@ -39,10 +42,27 @@ const MacroListComponent: React.FC<MacroListComponentProps> = ({ onClose, onMacr
     onClose(); // 확정 버튼을 누른 후에 모달을 닫음
   };
 
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredMacros = macros.filter(macro => 
+    Hangul.search(macro, searchTerm) !== -1
+  );
+
   return (
     <ModalComponent isOpen={true} errorMessage={""}>
-      <div style={{ border: '1px solid' }}>
-        {macros.map((filename) => (
+      <div>
+        <input 
+          type="text" 
+          placeholder="Search macros..." 
+          value={searchTerm} 
+          onChange={handleSearchChange}
+          style={{ marginBottom: '10px', padding: '5px', width: '100%' }}
+        />
+      </div>
+      <div style={{ border: '1px solid', overflow: "auto", height: "150px" }}>
+        {filteredMacros.map((filename) => (
           <div 
             style={{ 
               padding: '2px', 
