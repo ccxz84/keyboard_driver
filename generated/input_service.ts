@@ -1111,6 +1111,230 @@ export class ReplayTask extends pb_1.Message {
         return ReplayTask.deserialize(bytes);
     }
 }
+export class ImportProfileRequest extends pb_1.Message {
+    #one_of_decls: number[][] = [];
+    constructor(data?: any[] | {
+        filename?: string;
+        savfile?: Uint8Array;
+    }) {
+        super();
+        pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
+        if (!Array.isArray(data) && typeof data == "object") {
+            if ("filename" in data && data.filename != undefined) {
+                this.filename = data.filename;
+            }
+            if ("savfile" in data && data.savfile != undefined) {
+                this.savfile = data.savfile;
+            }
+        }
+    }
+    get filename() {
+        return pb_1.Message.getFieldWithDefault(this, 1, "") as string;
+    }
+    set filename(value: string) {
+        pb_1.Message.setField(this, 1, value);
+    }
+    get savfile() {
+        return pb_1.Message.getFieldWithDefault(this, 2, new Uint8Array(0)) as Uint8Array;
+    }
+    set savfile(value: Uint8Array) {
+        pb_1.Message.setField(this, 2, value);
+    }
+    static fromObject(data: {
+        filename?: string;
+        savfile?: Uint8Array;
+    }): ImportProfileRequest {
+        const message = new ImportProfileRequest({});
+        if (data.filename != null) {
+            message.filename = data.filename;
+        }
+        if (data.savfile != null) {
+            message.savfile = data.savfile;
+        }
+        return message;
+    }
+    toObject() {
+        const data: {
+            filename?: string;
+            savfile?: Uint8Array;
+        } = {};
+        if (this.filename != null) {
+            data.filename = this.filename;
+        }
+        if (this.savfile != null) {
+            data.savfile = this.savfile;
+        }
+        return data;
+    }
+    serialize(): Uint8Array;
+    serialize(w: pb_1.BinaryWriter): void;
+    serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+        const writer = w || new pb_1.BinaryWriter();
+        if (this.filename.length)
+            writer.writeString(1, this.filename);
+        if (this.savfile.length)
+            writer.writeBytes(2, this.savfile);
+        if (!w)
+            return writer.getResultBuffer();
+    }
+    static deserialize(bytes: Uint8Array | pb_1.BinaryReader): ImportProfileRequest {
+        const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new ImportProfileRequest();
+        while (reader.nextField()) {
+            if (reader.isEndGroup())
+                break;
+            switch (reader.getFieldNumber()) {
+                case 1:
+                    message.filename = reader.readString();
+                    break;
+                case 2:
+                    message.savfile = reader.readBytes();
+                    break;
+                default: reader.skipField();
+            }
+        }
+        return message;
+    }
+    serializeBinary(): Uint8Array {
+        return this.serialize();
+    }
+    static deserializeBinary(bytes: Uint8Array): ImportProfileRequest {
+        return ImportProfileRequest.deserialize(bytes);
+    }
+}
+export class ExportProfileRequest extends pb_1.Message {
+    #one_of_decls: number[][] = [];
+    constructor(data?: any[] | {
+        filename?: string;
+    }) {
+        super();
+        pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
+        if (!Array.isArray(data) && typeof data == "object") {
+            if ("filename" in data && data.filename != undefined) {
+                this.filename = data.filename;
+            }
+        }
+    }
+    get filename() {
+        return pb_1.Message.getFieldWithDefault(this, 1, "") as string;
+    }
+    set filename(value: string) {
+        pb_1.Message.setField(this, 1, value);
+    }
+    static fromObject(data: {
+        filename?: string;
+    }): ExportProfileRequest {
+        const message = new ExportProfileRequest({});
+        if (data.filename != null) {
+            message.filename = data.filename;
+        }
+        return message;
+    }
+    toObject() {
+        const data: {
+            filename?: string;
+        } = {};
+        if (this.filename != null) {
+            data.filename = this.filename;
+        }
+        return data;
+    }
+    serialize(): Uint8Array;
+    serialize(w: pb_1.BinaryWriter): void;
+    serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+        const writer = w || new pb_1.BinaryWriter();
+        if (this.filename.length)
+            writer.writeString(1, this.filename);
+        if (!w)
+            return writer.getResultBuffer();
+    }
+    static deserialize(bytes: Uint8Array | pb_1.BinaryReader): ExportProfileRequest {
+        const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new ExportProfileRequest();
+        while (reader.nextField()) {
+            if (reader.isEndGroup())
+                break;
+            switch (reader.getFieldNumber()) {
+                case 1:
+                    message.filename = reader.readString();
+                    break;
+                default: reader.skipField();
+            }
+        }
+        return message;
+    }
+    serializeBinary(): Uint8Array {
+        return this.serialize();
+    }
+    static deserializeBinary(bytes: Uint8Array): ExportProfileRequest {
+        return ExportProfileRequest.deserialize(bytes);
+    }
+}
+export class ExportProfileResponse extends pb_1.Message {
+    #one_of_decls: number[][] = [];
+    constructor(data?: any[] | {
+        savfile?: Uint8Array;
+    }) {
+        super();
+        pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
+        if (!Array.isArray(data) && typeof data == "object") {
+            if ("savfile" in data && data.savfile != undefined) {
+                this.savfile = data.savfile;
+            }
+        }
+    }
+    get savfile() {
+        return pb_1.Message.getFieldWithDefault(this, 1, new Uint8Array(0)) as Uint8Array;
+    }
+    set savfile(value: Uint8Array) {
+        pb_1.Message.setField(this, 1, value);
+    }
+    static fromObject(data: {
+        savfile?: Uint8Array;
+    }): ExportProfileResponse {
+        const message = new ExportProfileResponse({});
+        if (data.savfile != null) {
+            message.savfile = data.savfile;
+        }
+        return message;
+    }
+    toObject() {
+        const data: {
+            savfile?: Uint8Array;
+        } = {};
+        if (this.savfile != null) {
+            data.savfile = this.savfile;
+        }
+        return data;
+    }
+    serialize(): Uint8Array;
+    serialize(w: pb_1.BinaryWriter): void;
+    serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+        const writer = w || new pb_1.BinaryWriter();
+        if (this.savfile.length)
+            writer.writeBytes(1, this.savfile);
+        if (!w)
+            return writer.getResultBuffer();
+    }
+    static deserialize(bytes: Uint8Array | pb_1.BinaryReader): ExportProfileResponse {
+        const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new ExportProfileResponse();
+        while (reader.nextField()) {
+            if (reader.isEndGroup())
+                break;
+            switch (reader.getFieldNumber()) {
+                case 1:
+                    message.savfile = reader.readBytes();
+                    break;
+                default: reader.skipField();
+            }
+        }
+        return message;
+    }
+    serializeBinary(): Uint8Array {
+        return this.serialize();
+    }
+    static deserializeBinary(bytes: Uint8Array): ExportProfileResponse {
+        return ExportProfileResponse.deserialize(bytes);
+    }
+}
 interface GrpcUnaryServiceInterface<P, R> {
     (message: P, metadata: grpc_1.Metadata, options: grpc_1.CallOptions, callback: grpc_1.requestCallback<R>): grpc_1.ClientUnaryCall;
     (message: P, metadata: grpc_1.Metadata, callback: grpc_1.requestCallback<R>): grpc_1.ClientUnaryCall;
@@ -1226,6 +1450,24 @@ export abstract class UnimplementedInputService {
             requestDeserialize: (bytes: Buffer) => ComplexReplayRequest.deserialize(new Uint8Array(bytes)),
             responseSerialize: (message: StatusResponse) => Buffer.from(message.serialize()),
             responseDeserialize: (bytes: Buffer) => StatusResponse.deserialize(new Uint8Array(bytes))
+        },
+        ImportProfile: {
+            path: "/Input/ImportProfile",
+            requestStream: false,
+            responseStream: false,
+            requestSerialize: (message: ImportProfileRequest) => Buffer.from(message.serialize()),
+            requestDeserialize: (bytes: Buffer) => ImportProfileRequest.deserialize(new Uint8Array(bytes)),
+            responseSerialize: (message: StatusResponse) => Buffer.from(message.serialize()),
+            responseDeserialize: (bytes: Buffer) => StatusResponse.deserialize(new Uint8Array(bytes))
+        },
+        ExportProfile: {
+            path: "/Input/ExportProfile",
+            requestStream: false,
+            responseStream: false,
+            requestSerialize: (message: ExportProfileRequest) => Buffer.from(message.serialize()),
+            requestDeserialize: (bytes: Buffer) => ExportProfileRequest.deserialize(new Uint8Array(bytes)),
+            responseSerialize: (message: ExportProfileResponse) => Buffer.from(message.serialize()),
+            responseDeserialize: (bytes: Buffer) => ExportProfileResponse.deserialize(new Uint8Array(bytes))
         }
     };
     [method: string]: grpc_1.UntypedHandleCall;
@@ -1239,6 +1481,8 @@ export abstract class UnimplementedInputService {
     abstract SaveMacro(call: grpc_1.ServerUnaryCall<SaveMacroRequest, SaveMacroResponse>, callback: grpc_1.sendUnaryData<SaveMacroResponse>): void;
     abstract DeleteMacros(call: grpc_1.ServerUnaryCall<DeleteMacrosRequest, StatusResponse>, callback: grpc_1.sendUnaryData<StatusResponse>): void;
     abstract StartComplexReplay(call: grpc_1.ServerUnaryCall<ComplexReplayRequest, StatusResponse>, callback: grpc_1.sendUnaryData<StatusResponse>): void;
+    abstract ImportProfile(call: grpc_1.ServerUnaryCall<ImportProfileRequest, StatusResponse>, callback: grpc_1.sendUnaryData<StatusResponse>): void;
+    abstract ExportProfile(call: grpc_1.ServerUnaryCall<ExportProfileRequest, ExportProfileResponse>, callback: grpc_1.sendUnaryData<ExportProfileResponse>): void;
 }
 export class InputClient extends grpc_1.makeGenericClientConstructor(UnimplementedInputService.definition, "Input", {}) {
     constructor(address: string, credentials: grpc_1.ChannelCredentials, options?: Partial<grpc_1.ChannelOptions>) {
@@ -1273,5 +1517,11 @@ export class InputClient extends grpc_1.makeGenericClientConstructor(Unimplement
     };
     StartComplexReplay: GrpcUnaryServiceInterface<ComplexReplayRequest, StatusResponse> = (message: ComplexReplayRequest, metadata: grpc_1.Metadata | grpc_1.CallOptions | grpc_1.requestCallback<StatusResponse>, options?: grpc_1.CallOptions | grpc_1.requestCallback<StatusResponse>, callback?: grpc_1.requestCallback<StatusResponse>): grpc_1.ClientUnaryCall => {
         return super.StartComplexReplay(message, metadata, options, callback);
+    };
+    ImportProfile: GrpcUnaryServiceInterface<ImportProfileRequest, StatusResponse> = (message: ImportProfileRequest, metadata: grpc_1.Metadata | grpc_1.CallOptions | grpc_1.requestCallback<StatusResponse>, options?: grpc_1.CallOptions | grpc_1.requestCallback<StatusResponse>, callback?: grpc_1.requestCallback<StatusResponse>): grpc_1.ClientUnaryCall => {
+        return super.ImportProfile(message, metadata, options, callback);
+    };
+    ExportProfile: GrpcUnaryServiceInterface<ExportProfileRequest, ExportProfileResponse> = (message: ExportProfileRequest, metadata: grpc_1.Metadata | grpc_1.CallOptions | grpc_1.requestCallback<ExportProfileResponse>, options?: grpc_1.CallOptions | grpc_1.requestCallback<ExportProfileResponse>, callback?: grpc_1.requestCallback<ExportProfileResponse>): grpc_1.ClientUnaryCall => {
+        return super.ExportProfile(message, metadata, options, callback);
     };
 }

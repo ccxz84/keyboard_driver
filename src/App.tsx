@@ -3,11 +3,13 @@ import './style/App.scss';
 import ButtonSection from './components/ButtonSection';
 import ButtonComponent from './components/ButtonComponent';
 import UpdateComponent from './components/UpdateComponent';
+import MacroListComponent from './components/MacroListComponent';
 const { ipcRenderer } = window.require('electron');
 
 const App: React.FC = () => {
   const [ipAddress, setIpAddress] = React.useState<string>('');
   const [isUpdateOpen, setIsUpdateOpen] = React.useState<boolean>(false);
+  const [isMacroListOpen, setIsMacroListOpen] = React.useState<boolean>(false);
 
   const isValidIpAddress = (ip: string) => {
     const ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
@@ -29,6 +31,14 @@ const App: React.FC = () => {
     ipcRenderer.send('restart-driver');
   }
 
+  const handleImportProfile = () => {
+    ipcRenderer.send('import-profile');
+  };
+
+  const handleExportProfile = (filename: string) => {
+    ipcRenderer.send('export-profile', filename);
+  };
+
   return (
     <div className="App">
       <ButtonSection />
@@ -40,6 +50,8 @@ const App: React.FC = () => {
         </div>
         <ButtonComponent text={"리셋"} onClick={resetDriver} />
         <ButtonComponent text={"업데이트"} onClick={() => { setIsUpdateOpen(true) }} />
+        <ButtonComponent text={"가져오기"} onClick={handleImportProfile} />
+        <ButtonComponent text={"내보내기"} onClick={() => { setIsMacroListOpen(true) }} />
         {isUpdateOpen && (
           <UpdateComponent isOpen={isUpdateOpen} onClose={() => {
             setIsUpdateOpen(false);
@@ -47,6 +59,9 @@ const App: React.FC = () => {
           </UpdateComponent>
         )}
       </div>
+      {isMacroListOpen && (
+          <MacroListComponent onClose={() => setIsMacroListOpen(false)} onMacroSelected={handleExportProfile} />
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import isDev from 'electron-is-dev';
 import path from 'path';
-import { ComplexReplayRequest, DeleteMacrosRequest, GetMacroDetailRequest, GetMacroDetailResponse, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
+import { ComplexReplayRequest, DeleteMacrosRequest, ExportProfileRequest, GetMacroDetailRequest, GetMacroDetailResponse, ImportProfileRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
 import GrpcClient from './src/utils/grpc';
 import { ComplexReplayType } from './src/utils/type';
 import { RestartRequest, UpdateRequest, UpdateResponse } from './generated/restart_service';
@@ -276,4 +276,65 @@ ipcMain.on('request-update', async (event) => {
   call.on('error', (error) => {
       event.sender.send('update-grpc-error', error.message);
   });
+});
+
+ipcMain.on('import-profile', async (event) => {
+  if (!mainWindow) {
+    throw new Error("Main window is not initialized");
+  }
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [{ name: 'Sav Files', extensions: ['sav'] }]
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    const filePath = result.filePaths[0];
+    const data = fs.readFileSync(filePath);
+
+    const importRequest = {
+      filename: path.basename(filePath),
+      savfile: data
+    };
+
+    
+    const a = new ImportProfileRequest(importRequest);
+
+    console.log("Sending import profile request:", a); // 디버그 로그
+
+    GrpcClient.MacroGrpcClient.importProfile(new ImportProfileRequest(importRequest))
+      .then(response => {
+        event.sender.send('import-profile-success', response);
+      })
+      .catch(error => {
+        event.sender.send('import-profile-error', error.message);
+      });
+  }
+});
+
+// Export profile handler
+ipcMain.on('export-profile', async (event, filename) => {
+  if (!mainWindow) {
+    throw new Error("Main window is not initialized");
+  }
+
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: filename,
+    filters: [{ name: 'Sav Files', extensions: ['sav'] }]
+  });
+
+  if (!result.canceled && result.filePath) {
+    const exportRequest = { filename };
+
+    GrpcClient.MacroGrpcClient.exportProfile(new ExportProfileRequest(exportRequest))
+      .then(response => {
+        if (result.filePath) {
+          fs.writeFileSync(result.filePath, Buffer.from(response.savfile));
+          event.sender.send('export-profile-success', `File saved as ${result.filePath}`);
+        }
+      })
+      .catch(error => {
+        event.sender.send('export-profile-error', error.message);
+      });
+  }
 });

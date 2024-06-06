@@ -1,5 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
-import { StartRequest, StopRequest, InputClient, ListRequest, StopReplayRequest, ReplayRequest, StatusResponse, SaveFilesResponse, GetMacroDetailRequest, GetMacroDetailResponse, DeleteMacrosRequest, ComplexReplayRequest } from '../../generated/input_service';
+import { StartRequest, StopRequest, InputClient, ListRequest, StopReplayRequest, ReplayRequest, StatusResponse, SaveFilesResponse, GetMacroDetailRequest, GetMacroDetailResponse, DeleteMacrosRequest, ComplexReplayRequest, ImportProfileRequest, ExportProfileRequest, ExportProfileResponse } from '../../generated/input_service';
 import { RestartClient, RestartRequest, UpdateRequest, UpdateResponse } from '../../generated/restart_service';
 
 class MacroGrpcClient {
@@ -133,6 +133,35 @@ class MacroGrpcClient {
   startComplexReplay(request: ComplexReplayRequest): Promise<StatusResponse> {
     return new Promise((resolve, reject) => {
       this.client.StartComplexReplay(request, (error, response) => {
+        if (error) {
+          console.error('Error:', error);
+          reject(error);
+          return;
+        }
+        if (response) {
+          resolve(response);
+        }
+      });
+    });
+  }
+  importProfile(request: ImportProfileRequest): Promise<StatusResponse> {
+    return new Promise((resolve, reject) => {
+      this.client.ImportProfile(request, (error, response) => {
+        if (error) {
+          console.error('Error:', error);
+          reject(error);
+          return;
+        }
+        if (response) {
+          resolve(response);
+        }
+      });
+    });
+  }
+
+  exportProfile(request: ExportProfileRequest): Promise<ExportProfileResponse> {
+    return new Promise((resolve, reject) => {
+      this.client.ExportProfile(request, (error, response) => {
         if (error) {
           console.error('Error:', error);
           reject(error);

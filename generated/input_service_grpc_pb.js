@@ -28,6 +28,28 @@ function deserialize_DeleteMacrosRequest(buffer_arg) {
   return input_service_pb.DeleteMacrosRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_ExportProfileRequest(arg) {
+  if (!(arg instanceof input_service_pb.ExportProfileRequest)) {
+    throw new Error('Expected argument of type ExportProfileRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_ExportProfileRequest(buffer_arg) {
+  return input_service_pb.ExportProfileRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_ExportProfileResponse(arg) {
+  if (!(arg instanceof input_service_pb.ExportProfileResponse)) {
+    throw new Error('Expected argument of type ExportProfileResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_ExportProfileResponse(buffer_arg) {
+  return input_service_pb.ExportProfileResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_GetMacroDetailRequest(arg) {
   if (!(arg instanceof input_service_pb.GetMacroDetailRequest)) {
     throw new Error('Expected argument of type GetMacroDetailRequest');
@@ -48,6 +70,17 @@ function serialize_GetMacroDetailResponse(arg) {
 
 function deserialize_GetMacroDetailResponse(buffer_arg) {
   return input_service_pb.GetMacroDetailResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_ImportProfileRequest(arg) {
+  if (!(arg instanceof input_service_pb.ImportProfileRequest)) {
+    throw new Error('Expected argument of type ImportProfileRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_ImportProfileRequest(buffer_arg) {
+  return input_service_pb.ImportProfileRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_ListRequest(arg) {
@@ -271,6 +304,28 @@ var InputService = exports.InputService = {
     requestDeserialize: deserialize_ComplexReplayRequest,
     responseSerialize: serialize_StatusResponse,
     responseDeserialize: deserialize_StatusResponse,
+  },
+  importProfile: {
+    path: '/Input/ImportProfile',
+    requestStream: false,
+    responseStream: false,
+    requestType: input_service_pb.ImportProfileRequest,
+    responseType: input_service_pb.StatusResponse,
+    requestSerialize: serialize_ImportProfileRequest,
+    requestDeserialize: deserialize_ImportProfileRequest,
+    responseSerialize: serialize_StatusResponse,
+    responseDeserialize: deserialize_StatusResponse,
+  },
+  exportProfile: {
+    path: '/Input/ExportProfile',
+    requestStream: false,
+    responseStream: false,
+    requestType: input_service_pb.ExportProfileRequest,
+    responseType: input_service_pb.ExportProfileResponse,
+    requestSerialize: serialize_ExportProfileRequest,
+    requestDeserialize: deserialize_ExportProfileRequest,
+    responseSerialize: serialize_ExportProfileResponse,
+    responseDeserialize: deserialize_ExportProfileResponse,
   },
 };
 
