@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Notification</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="message">매크로 실행 종료</div>
+  <script>
+    const audio = new Audio('assets/end.mp3'); // 소리 파일 경로 설정
+    audio.play().catch(error => console.error('Error playing sound:', error));
+  </script>
+</body>
+</html>

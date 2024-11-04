@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, screen } from 'electron';
 import isDev from 'electron-is-dev';
 import path from 'path';
 import { ComplexReplayRequest, DeleteMacrosRequest, ExportProfileRequest, GetMacroDetailRequest, GetMacroDetailResponse, ImportProfileRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
@@ -7,7 +7,7 @@ import { ComplexReplayType } from './src/utils/type';
 import { RestartRequest, UpdateRequest, UpdateResponse } from './generated/restart_service';
 import { makeArduinoKeyboardCode } from './src/utils/arduino';
 import { exec } from 'node:child_process';
-import { SerialPort } from 'serialport';
+// import * as sound from 'sound-play';
 import fs from 'fs';
 
 function getStopCode(): string {
@@ -44,14 +44,14 @@ function uploadSketch(port: string, sketchPath: string) {
 
 function findArduinoPort(): Promise<string> {
   return new Promise((resolve, reject) => {
-    SerialPort.list().then(ports => {
-      const arduinoPort = ports.find(port => port.manufacturer && port.manufacturer.includes('Arduino'));
-      if (arduinoPort) {
-        resolve(arduinoPort.path);
-      } else {
-        reject(new Error('No Arduino found'));
-      }
-    }).catch(err => reject(new Error('Failed to list serial ports')));
+    // SerialPort.list().then(ports => {
+    //   const arduinoPort = ports.find(port => port.manufacturer && port.manufacturer.includes('Arduino'));
+    //   if (arduinoPort) {
+    //     resolve(arduinoPort.path);
+    //   } else {
+    //     reject(new Error('No Arduino found'));
+    //   }
+    // }).catch(err => reject(new Error('Failed to list serial ports')));
   });
 }
 
@@ -137,8 +137,8 @@ ipcMain.on('stop-replay', async (event) => {
       const code = getStopCode();
 
       const response = await GrpcClient.MacroGrpcClient.stopReplay(request);
-      const port = await findArduinoPort();
-      console.log(port);
+      // const port = await findArduinoPort();
+      // console.log(port);
 
       const sketchDir = path.join(__dirname, 'stop_sketch');
 
@@ -146,11 +146,11 @@ ipcMain.on('stop-replay', async (event) => {
         fs.mkdirSync(sketchDir);
       }
 
-      const sketchPath = path.join(__dirname, 'stop_sketch', 'stop_sketch.ino');
+      // const sketchPath = path.join(__dirname, 'stop_sketch', 'stop_sketch.ino');
 
-      await saveSketchToFile(code, sketchPath);
+      // await saveSketchToFile(code, sketchPath);
 
-      uploadSketch(port, sketchPath);
+      // uploadSketch(port, sketchPath);
 
       event.sender.send('replay-stopped', response);
 
@@ -195,14 +195,59 @@ ipcMain.on('get-macro-detail', async (event, filename) => {
   }
 });
 
+// function playSound() {
+//   const soundPath = path.join(__dirname, 'assets/end.mp3');
+//   sound.play(soundPath).catch((err: Error) => {
+//     console.error('Error playing sound:', err);
+//   });
+// }
+
+function showPopupNotification(message: string) {
+  // 팝업 창 설정
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const popup = new BrowserWindow({
+    width: 300,
+    height: 80,
+    frame: false,
+    alwaysOnTop: true,
+    transparent: true,
+    skipTaskbar: true,
+    x: width - 320, // 오른쪽 끝 여백을 두고 창을 배치 (300px 너비 + 20px 여백)
+    y: height - 100,
+    resizable: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'popup-preload.js'), // 필요 시 프리로드 파일 설정
+    },
+  });
+
+  // HTML 파일 로드
+  popup.loadFile('popup.html');
+
+  // 팝업 창에 메시지 전달
+  popup.webContents.on('did-finish-load', () => {
+    popup.webContents.send('show-message', message);
+  });
+
+  // 일정 시간 후 창 닫기
+  setTimeout(() => {
+    if (!popup.isDestroyed()) {
+      popup.close();
+    }
+  }, 3000); // 3초 후 자동 닫힘 (필요 시 조정)
+}
+
 ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
   try {
     const convertTasks = tasks.map(v => new ReplayTask({ ...v, repeatCount: v.repeatCount || 1 })); // Ensure repeatCount is set
     const response = await GrpcClient.MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount }));
     event.sender.send('get-start-complex-replay-response', response, null);
+
+    // playSound();
+    showPopupNotification('매크로 실행 완료');
   } catch (error) {
     console.error('Error getting macro detail:', error);
     event.sender.send('get-start-complex-replay-response', null, error);
+    // playSound();
   }
 });
 
