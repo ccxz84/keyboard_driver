@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import './style/App.scss';
 import ButtonSection from './components/ButtonSection';
 import ButtonComponent from './components/ButtonComponent';
@@ -45,37 +45,35 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <Routes>
-      <Route
-          path="/"
-          element={<div className="App">
-            <ButtonSection />
-            <div style={{height: "100px"}}></div>
-            <div style={{ display: "flex", justifyContent: "space-between"}} className="button-section">
-              <div>
-                <input style={{ marginRight: "20px" }} value={ipAddress} onChange={(value) => setIpAddress(value.target.value)}></input>
-                <ButtonComponent text={"적용"} onClick={changeIpAddress} />
-              </div>
-              <ButtonComponent text={"리셋"} onClick={resetDriver} />
-              <ButtonComponent text={"업데이트"} onClick={() => { setIsUpdateOpen(true) }} />
-              <ButtonComponent text={"가져오기"} onClick={handleImportProfile} />
-              <ButtonComponent text={"내보내기"} onClick={() => { setIsMacroListOpen(true) }} />
-              {isUpdateOpen && (
-                <UpdateComponent isOpen={isUpdateOpen} onClose={() => {
-                  setIsUpdateOpen(false);
-                }}>
-                </UpdateComponent>
-              )}
+  <Routes>
+    <Route
+      path="/"
+      element={
+        <div className="App">
+          <ButtonSection />
+          <div style={{ height: "100px" }}></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }} className="button-section">
+            <div>
+              <input style={{ marginRight: "20px" }} value={ipAddress} onChange={(value) => setIpAddress(value.target.value)} />
+              <ButtonComponent text={"적용"} onClick={changeIpAddress} />
             </div>
-            {isMacroListOpen && (
-                <MacroListComponent onClose={() => setIsMacroListOpen(false)} onMacroSelected={handleExportProfile} />
+            <ButtonComponent text={"리셋"} onClick={resetDriver} />
+            <ButtonComponent text={"업데이트"} onClick={() => { setIsUpdateOpen(true) }} />
+            <ButtonComponent text={"가져오기"} onClick={handleImportProfile} />
+            <ButtonComponent text={"내보내기"} onClick={() => { setIsMacroListOpen(true) }} />
+            {isUpdateOpen && (
+              <UpdateComponent isOpen={isUpdateOpen} onClose={() => setIsUpdateOpen(false)} />
             )}
-          </div>}
-          />
-           <Route path="/video" element={<VideoComponent />} />
-      </Routes>
-    </Router>
-    
+          </div>
+          {isMacroListOpen && (
+            <MacroListComponent onClose={() => setIsMacroListOpen(false)} onMacroSelected={handleExportProfile} />
+          )}
+        </div>
+      }
+    />
+    <Route path="/video" element={<VideoComponent />} />
+  </Routes>
+  </Router>
   );
 }
 

@@ -373,7 +373,7 @@ function showVideoPopup() {
   if (!isDev) {
     videoPopup.webContents.once('did-finish-load', () => {
       videoPopup?.webContents.executeJavaScript(`
-              window.history.pushState({}, '', '/video');
+              window.history.pushState({}, '', '#video');
               window.dispatchEvent(new Event('popstate'));
           `);
       });
