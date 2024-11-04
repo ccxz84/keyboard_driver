@@ -7,8 +7,8 @@ import { ComplexReplayType } from './src/utils/type';
 import { RestartRequest, UpdateRequest, UpdateResponse } from './generated/restart_service';
 import { makeArduinoKeyboardCode } from './src/utils/arduino';
 import { exec } from 'node:child_process';
-// import * as sound from 'sound-play';
 import fs from 'fs';
+import { VideoFrame } from './generated/video_service';
 
 function getStopCode(): string {
   return `
@@ -83,6 +83,15 @@ function createWindow(): void {
         : `file://${path.join(__dirname, '../app/dist/index.html')}`;
 
     mainWindow.loadURL(startURL);
+
+    // if (!isDev) {
+    //   mainWindow.webContents.once('did-finish-load', () => {
+    //     mainWindow?.webContents.executeJavaScript(`
+    //             window.history.pushState({}, '', '/');
+    //             window.dispatchEvent(new Event('popstate'));
+    //         `);
+    //     });
+    // }
 
     mainWindow.on('closed', () => {
         mainWindow = null;
@@ -300,6 +309,7 @@ ipcMain.on('start-complex-replay-arduino', async (event, tasks:
 ipcMain.on('change-ip-address', async (event, ipAddress: string) => {
   GrpcClient.MacroGrpcClient.updateAddress(ipAddress);
   GrpcClient.RestartGrpcClient.updateAddress(ipAddress);
+  GrpcClient.VideoGrpcClient.updateAddress(ipAddress);
 });
 
 ipcMain.on('restart-driver', async (event) => {
@@ -322,6 +332,99 @@ ipcMain.on('request-update', async (event) => {
       event.sender.send('update-grpc-error', error.message);
   });
 });
+
+let videoPopup: BrowserWindow | null;
+
+function showVideoPopup() {
+  // 팝업 창 설정
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  videoPopup = new BrowserWindow({
+    width: 300,
+    height: 80,
+    frame: true,         // 기본 창 프레임 활성화 (확대/축소 버튼 포함)
+    autoHideMenuBar: true,
+    resizable: true,     // 크기 조정 가능
+    maximizable: true,   // 최대화 가능
+    minimizable: true,   // 최소화 가능
+    fullscreenable: true, // 전체 화면 전환 가능
+    alwaysOnTop: false,  // 일반 창으로 설정
+    transparent: false,  // 투명도 비활성화
+    skipTaskbar: false,  // 작업 표시줄에 표시
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+
+  // HTML 파일 로드
+  const startURL = isDev
+        ? 'http://localhost:1624/video'
+        : `file://${path.join(__dirname, '../app/dist/index.html')}`;
+
+  videoPopup.loadURL(startURL);
+  
+  videoPopup.on('show', () => console.log("Popup window shown"));
+  videoPopup.on('closed', () => {
+    videoPopup = null;
+    console.log("Popup window closed");
+  });
+
+    // 프로덕션 모드에서 '/video'로 이동하도록 설정
+  if (!isDev) {
+    videoPopup.webContents.once('did-finish-load', () => {
+      videoPopup?.webContents.executeJavaScript(`
+              window.history.pushState({}, '', '/video');
+              window.dispatchEvent(new Event('popstate'));
+          `);
+      });
+  }
+}
+
+ipcMain.on('view-video-stream', async (event) => {
+  showVideoPopup();
+});
+
+ipcMain.on('connect-video-stream', async (event) => {
+  // 비디오 스트리밍을 시작
+  startVideoStream(event);
+});
+
+function startVideoStream(event: Electron.IpcMainEvent) {
+  const call = GrpcClient.VideoGrpcClient.streamVideo();
+
+  call.on('data', (frame: VideoFrame) => {
+    // console.log('asdfasd');
+    if (videoPopup && !videoPopup.isDestroyed()) {
+      videoPopup.webContents.send('stream-video-frame', { frame });
+    }
+  });
+
+  call.on('end', () => {
+    // 스트림이 종료된 경우 재시도
+    // console.log('Stream ended, retrying...');
+    retryVideoStream(event);
+  });
+
+  call.on('error', (error) => {
+    // 에러 발생 시 재시도
+    // console.error('Stream error:', error);
+    retryVideoStream(event);
+  });
+}
+
+function retryVideoStream(event: Electron.IpcMainEvent) {
+  setTimeout(() => {
+    console.log('Retrying video stream...');
+
+    // videoPopup이 닫혔거나 파괴된 경우 새 창을 생성
+    if (!videoPopup || videoPopup.isDestroyed()) {
+      showVideoPopup();
+    }
+
+    // 비디오 스트림을 다시 시작
+    startVideoStream(event);
+  }, 1000); // 1초 후 재시도
+}
 
 ipcMain.on('import-profile', async (event) => {
   if (!mainWindow) {

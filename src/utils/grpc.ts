@@ -1,6 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import { StartRequest, StopRequest, InputClient, ListRequest, StopReplayRequest, ReplayRequest, StatusResponse, SaveFilesResponse, GetMacroDetailRequest, GetMacroDetailResponse, DeleteMacrosRequest, ComplexReplayRequest, ImportProfileRequest, ExportProfileRequest, ExportProfileResponse } from '../../generated/input_service';
 import { RestartClient, RestartRequest, UpdateRequest, UpdateResponse } from '../../generated/restart_service';
+import { VideoServiceClient, VideoRequest, VideoFrame } from '../../generated/video_service';
 
 class MacroGrpcClient {
     // gRPC 클라이언트 인스턴스를 생성합니다.
@@ -209,4 +210,27 @@ class RestartGrpcClient {
   }
 }
 
-export default { MacroGrpcClient: new MacroGrpcClient(), RestartGrpcClient: new RestartGrpcClient()};
+class VideoGrpcClient {
+  client;
+  private address: string;
+
+  constructor() {
+    this.address = '10.55.0.1';
+    this.client = new VideoServiceClient(`${this.address}:50053`, grpc.credentials.createInsecure());
+  }
+
+  streamVideo() {
+    const call = this.client.StreamVideo(new VideoRequest());
+    return call;
+  }
+
+  updateAddress(newAddress: string) {
+    if (newAddress !== this.address) {
+      this.address = newAddress;
+      this.client = new VideoServiceClient(`${this.address}:50053`, grpc.credentials.createInsecure());
+      console.log(`Address updated to ${this.address}:50053`);
+    }
+  }
+}
+
+export default { MacroGrpcClient: new MacroGrpcClient(), RestartGrpcClient: new RestartGrpcClient(), VideoGrpcClient: new VideoGrpcClient()};
