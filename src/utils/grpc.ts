@@ -1,7 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import { StartRequest, StopRequest, InputClient, ListRequest, StopReplayRequest, ReplayRequest, StatusResponse, SaveFilesResponse, GetMacroDetailRequest, GetMacroDetailResponse, DeleteMacrosRequest, ComplexReplayRequest, ImportProfileRequest, ExportProfileRequest, ExportProfileResponse } from '../../generated/input_service';
 import { RestartClient, RestartRequest, UpdateRequest, UpdateResponse } from '../../generated/restart_service';
-import { VideoServiceClient, VideoRequest, VideoFrame } from '../../generated/video_service';
+import { VideoServiceClient, VideoRequest, VideoFrame, Empty } from '../../generated/video_service';
 
 class MacroGrpcClient {
     // gRPC 클라이언트 인스턴스를 생성합니다.
@@ -221,6 +221,11 @@ class VideoGrpcClient {
 
   streamVideo() {
     const call = this.client.StreamVideo(new VideoRequest());
+    return call;
+  }
+
+  streamMinimapVideo() {
+    const call = this.client.CalculateMinimap(new Empty());
     return call;
   }
 

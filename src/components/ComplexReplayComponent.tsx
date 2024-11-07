@@ -3,6 +3,7 @@ import ModalComponent from './ModalComponent';
 import MacroListComponent from './MacroListComponent';
 import ButtonComponent from './ButtonComponent';
 import { ComplexReplayType } from '../utils/type';
+import VideoComponent from './VideoComponent';
 const { ipcRenderer } = window.require('electron');
 
 interface ComplexReplayComponentProps {
@@ -15,6 +16,25 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
   const [complexReplayRequest, setComplexReplayRequest] = useState<ComplexReplayType[]>([]);
   const [modalOpenList, setModalOpenList] = useState<boolean[]>([]);
   const [repeatCount, setRepeatCount] = useState<number>(1);
+  const [frameData, setFrameData] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    // Electron에서 비디오 프레임 수신
+    ipcRenderer.on('stream-minimap-video-frame', (_, data) => {
+      if (data.frame && data.frame.array && data.frame.array[0]) {
+        const uint8Array = new Uint8Array(data.frame.array[0]);
+        const base64String = Buffer.from(uint8Array).toString('base64');
+        setFrameData(base64String); // frameData 상태 업데이트
+      } else {
+        console.error('Invalid frame data format');
+      }
+    });
+
+    // 컴포넌트가 언마운트될 때 이벤트 리스너 정리
+    return () => {
+      ipcRenderer.removeAllListeners('stream-minimap-video-frame');
+    };
+  }, []);
 
   // ReplayTask의 filename을 업데이트하는 함수
   const updateFilenameAtIndex = (index: number, filename: string) => {
@@ -84,6 +104,10 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
     ipcRenderer.send('restart-driver');
   };
 
+  const caculatorMinimap = () => {
+    ipcRenderer.send('calcul-minimap-video-stream');
+  }
+
   return (
     <ModalComponent isOpen={true} errorMessage="">
       <div style={{display: "flex", flexDirection: "row"}}>
@@ -151,7 +175,14 @@ const ComplexReplayComponent: React.FC<ComplexReplayComponentProps> = ({ onClose
         <button onClick={() => {
           runComplexReplayArduino(complexReplayRequest, repeatCount);
         }}>아두이노 실행</button>
+        <button onClick={() => {caculatorMinimap()}}>미니맵</button>
+        {/* VideoComponent 추가 */}
+        
       </div>
+      <div style={{ marginTop: '20px' }}>
+          <VideoComponent frameData={frameData} />
+        </div>
+      
     </ModalComponent>
   );
 };

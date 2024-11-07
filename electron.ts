@@ -358,7 +358,7 @@ function showVideoPopup() {
 
   // HTML 파일 로드
   const startURL = isDev
-        ? 'http://localhost:1624/video'
+        ? 'http://localhost:1624#video'
         : `file://${path.join(__dirname, '../app/dist/index.html')}`;
 
   videoPopup.loadURL(startURL);
@@ -389,11 +389,49 @@ ipcMain.on('connect-video-stream', async (event) => {
   startVideoStream(event);
 });
 
+ipcMain.on('calcul-minimap-video-stream', async (event) => {
+  // 비디오 스트리밍을 시작
+  startMinimapVideoStream(event);
+});
+
+let isRetrying = false;  // 중복 재시도를 방지하기 위한 플래그
+
+function startMinimapVideoStream(event: Electron.IpcMainEvent) {
+  const call = GrpcClient.VideoGrpcClient.streamMinimapVideo();
+
+  call.on('data', (frame: VideoFrame) => {
+    event.sender.send('stream-minimap-video-frame', { frame });
+  });
+
+  call.on('end', () => {
+
+  });
+
+  call.on('error', () => {
+
+  });
+}
+
+function retryMinimapVideoStream(event: Electron.IpcMainEvent) {
+  if (isRetrying) return; // 이미 재시도 중이면 실행하지 않음
+  isRetrying = true;
+
+  setTimeout(() => {
+    console.log('Retrying video stream...');
+
+    // 플래그를 해제하고 스트림을 다시 시작
+    isRetrying = false;
+    startVideoStream(event);
+  }, 5000); // 1초 후 재시도
+}
+
 function startVideoStream(event: Electron.IpcMainEvent) {
+  // 재시도 중인 경우에는 새로운 스트림을 시작하지 않음
+  if (isRetrying) return;
+
   const call = GrpcClient.VideoGrpcClient.streamVideo();
 
   call.on('data', (frame: VideoFrame) => {
-    // console.log('asdfasd');
     if (videoPopup && !videoPopup.isDestroyed()) {
       videoPopup.webContents.send('stream-video-frame', { frame });
     }
@@ -401,18 +439,19 @@ function startVideoStream(event: Electron.IpcMainEvent) {
 
   call.on('end', () => {
     // 스트림이 종료된 경우 재시도
-    // console.log('Stream ended, retrying...');
     retryVideoStream(event);
   });
 
   call.on('error', (error) => {
     // 에러 발생 시 재시도
-    // console.error('Stream error:', error);
     retryVideoStream(event);
   });
 }
 
 function retryVideoStream(event: Electron.IpcMainEvent) {
+  if (isRetrying) return; // 이미 재시도 중이면 실행하지 않음
+  isRetrying = true;
+
   setTimeout(() => {
     console.log('Retrying video stream...');
 
@@ -421,9 +460,10 @@ function retryVideoStream(event: Electron.IpcMainEvent) {
       showVideoPopup();
     }
 
-    // 비디오 스트림을 다시 시작
+    // 플래그를 해제하고 스트림을 다시 시작
+    isRetrying = false;
     startVideoStream(event);
-  }, 1000); // 1초 후 재시도
+  }, 5000); // 1초 후 재시도
 }
 
 ipcMain.on('import-profile', async (event) => {

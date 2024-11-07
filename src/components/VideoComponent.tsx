@@ -1,54 +1,57 @@
-// src/components/VideoComponent.tsx
 import React, { useEffect, useRef, useState } from 'react';
 
-const { ipcRenderer } = window.require('electron');
+interface VideoComponentProps {
+  frameData: string | null; // base64 인코딩된 프레임 데이터
+}
 
-const VideoComponent: React.FC = () => {
-    const [frameData, setFrameData] = useState<string | null>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-    useEffect(() => {
-      // Electron에서 비디오 프레임 수신
-      ipcRenderer.on('stream-video-frame', (_, data) => {
-        // console.log('Received frame data:', data);
+const VideoComponent: React.FC<VideoComponentProps> = ({ frameData }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
-        if (data.frame && data.frame.array && data.frame.array[0]) {
-            // Uint8Array to Base64
-            const uint8Array = new Uint8Array(data.frame.array[0]);
-            const base64String = Buffer.from(uint8Array).toString('base64');
-            setFrameData(base64String);
-        } else {
-            console.error('Invalid frame data format');
-        }
+  useEffect(() => {
+    // 부모 div의 크기를 업데이트하는 함수
+    const updateCanvasSize = () => {
+      if (containerRef.current) {
+        setCanvasSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
         });
-
-        // 컴포넌트가 언마운트될 때 이벤트 리스너 정리
-        return () => {
-            ipcRenderer.removeAllListeners('stream-video-frame');
-        };
-    }, []);
-  
-    useEffect(() => {
-      if (frameData && canvasRef.current) {
-        console.log("a435sdfasdf")
-        const ctx = canvasRef.current.getContext('2d');
-        const img = new Image();
-  
-        img.onload = () => {
-          // 화면을 캔버스에 꽉 차게 그림
-          ctx?.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
-          ctx?.drawImage(img, 0, 0, canvasRef.current!.width, canvasRef.current!.height);
-        };
-  
-        img.src = `data:image/jpeg;base64,${frameData}`; // assuming frame is a base64 string
       }
-    }, [frameData]);
-  
-    return (
-      <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
-        <canvas ref={canvasRef} width={window.innerWidth} height={window.innerHeight} />
-      </div>
-    );
+    };
+
+    updateCanvasSize(); // 초기 크기 설정
+    window.addEventListener('resize', updateCanvasSize); // 창 크기 조절 시 업데이트
+
+    return () => {
+      window.removeEventListener('resize', updateCanvasSize); // 이벤트 리스너 정리
+    };
+  }, []);
+
+  useEffect(() => {
+    if (frameData && canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // 캔버스의 해상도를 부모 div의 크기로 설정
+        canvasRef.current!.width = canvasSize.width;
+        canvasRef.current!.height = canvasSize.height;
+
+        // 이미지를 캔버스에 선명하게 그리기
+        ctx?.clearRect(0, 0, canvasSize.width, canvasSize.height);
+        ctx?.drawImage(img, 0, 0, canvasSize.width, canvasSize.height);
+      };
+
+      img.src = `data:image/jpeg;base64,${frameData}`;
+    }
+  }, [frameData, canvasSize]);
+
+  return (
+    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
 };
 
 export default VideoComponent;

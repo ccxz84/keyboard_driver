@@ -35,7 +35,7 @@
       "generated",
       "src/utils/grpc.js",
       "src/utils/arduino.js",
-      "asset/*",
+      "assets/*",
       "popup.html"
     ]
   },

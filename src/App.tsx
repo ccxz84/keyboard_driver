@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import './style/App.scss';
 import ButtonSection from './components/ButtonSection';
 import ButtonComponent from './components/ButtonComponent';
 import UpdateComponent from './components/UpdateComponent';
 import MacroListComponent from './components/MacroListComponent';
-import VideoComponent from './components/VideoComponent';
+import MainVideoComponent from './components/MainVideoComponent';
 const { ipcRenderer } = window.require('electron');
 
 const App: React.FC = () => {
@@ -71,7 +71,7 @@ const App: React.FC = () => {
         </div>
       }
     />
-    <Route path="/video" element={<VideoComponent />} />
+    <Route path="/video" element={<MainVideoComponent />} />
   </Routes>
   </Router>
   );
