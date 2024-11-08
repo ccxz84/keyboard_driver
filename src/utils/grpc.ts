@@ -131,20 +131,12 @@ class MacroGrpcClient {
       });
     });
   }
-  startComplexReplay(request: ComplexReplayRequest): Promise<StatusResponse> {
-    return new Promise((resolve, reject) => {
-      this.client.StartComplexReplay(request, (error, response) => {
-        if (error) {
-          console.error('Error:', error);
-          reject(error);
-          return;
-        }
-        if (response) {
-          resolve(response);
-        }
-      });
-    });
+
+  startComplexReplay(request: ComplexReplayRequest) {
+    const call = this.client.StartComplexReplay(request);
+    return call;
   }
+  
   importProfile(request: ImportProfileRequest): Promise<StatusResponse> {
     return new Promise((resolve, reject) => {
       this.client.ImportProfile(request, (error, response) => {

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, screen } from 'electron';
 import isDev from 'electron-is-dev';
 import path from 'path';
-import { ComplexReplayRequest, DeleteMacrosRequest, ExportProfileRequest, GetMacroDetailRequest, GetMacroDetailResponse, ImportProfileRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StopReplayRequest, StopRequest } from './generated/input_service';
+import { ComplexReplayRequest, DeleteMacrosRequest, ExportProfileRequest, GetMacroDetailRequest, GetMacroDetailResponse, ImportProfileRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StatusResponse, StopReplayRequest, StopRequest } from './generated/input_service';
 import GrpcClient from './src/utils/grpc';
 import { ComplexReplayType } from './src/utils/type';
 import { RestartRequest, UpdateRequest, UpdateResponse } from './generated/restart_service';
@@ -248,11 +248,18 @@ function showPopupNotification(message: string) {
 ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
   try {
     const convertTasks = tasks.map(v => new ReplayTask({ ...v, repeatCount: v.repeatCount || 1 })); // Ensure repeatCount is set
-    const response = await GrpcClient.MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount }));
-    event.sender.send('get-start-complex-replay-response', response, null);
+    const call = GrpcClient.MacroGrpcClient.startComplexReplay(new ComplexReplayRequest({ tasks: convertTasks, repeatCount }));
 
-    // playSound();
-    showPopupNotification('매크로 실행 완료');
+    call.on('data', (response: StatusResponse) => {
+      event.sender.send('get-start-complex-replay-response', response, null);
+      showPopupNotification('매크로 실행 완료');
+    });
+    call.on('end', () => {
+        console.log("Streaming ended");
+    });
+    call.on('error', (err) => {
+        console.error("Error:", err);
+    });
   } catch (error) {
     console.error('Error getting macro detail:', error);
     event.sender.send('get-start-complex-replay-response', null, error);
