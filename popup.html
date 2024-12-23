@@ -19,8 +19,28 @@
 <body>
   <div id="message">매크로 실행 종료</div>
   <script>
-    const audio = new Audio('assets/end.mp3'); // 소리 파일 경로 설정
-    audio.play().catch(error => console.error('Error playing sound:', error));
+    let responseMessage;
+    const { ipcRenderer } = require('electron');
+    ipcRenderer.on('show-message', (event, message) => {
+      responseMessage = message;
+      document.getElementById('message').innerText = message;
+
+      let audio;
+      if (message == "플레이어 탐지 실패") {
+        audio = new Audio('assets/player.mp3');
+      }
+      else if (message === "룬 탐지") {
+        audio = new Audio('assets/rune.mp3');
+      }
+      else if (message === "적 탐지") {
+        audio = new Audio('assets/book.mp3');
+        audio.volume = 1.0;
+      }
+      audio.play().catch(error => console.error('Error playing sound:', error));
+    });
+
+    
+    
   </script>
 </body>
 </html>

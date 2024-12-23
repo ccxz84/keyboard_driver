@@ -1,7 +1,7 @@
-import { app, BrowserWindow, ipcMain, dialog, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, screen, globalShortcut } from 'electron';
 import isDev from 'electron-is-dev';
 import path from 'path';
-import { ComplexReplayRequest, DeleteMacrosRequest, ExportProfileRequest, GetMacroDetailRequest, GetMacroDetailResponse, ImportProfileRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StatusResponse, StopReplayRequest, StopRequest } from './generated/input_service';
+import { ComplexReplayRequest, DeleteMacrosRequest, ExportProfileRequest, GetMacroDetailRequest, MouseEvent, KeyboardEvent, GetMacroDetailResponse, ImportProfileRequest, KeyEvent, ListRequest, MacroEvent, ReplayRequest, ReplayTask, StartRequest, StatusResponse, StopReplayRequest, StopRequest } from './generated/input_service';
 import GrpcClient from './src/utils/grpc';
 import { ComplexReplayType } from './src/utils/type';
 import { RestartRequest, UpdateRequest, UpdateResponse } from './generated/restart_service';
@@ -9,6 +9,7 @@ import { makeArduinoKeyboardCode } from './src/utils/arduino';
 import { exec } from 'node:child_process';
 import fs from 'fs';
 import { VideoFrame } from './generated/video_service';
+import { ClientWritableStream } from '@grpc/grpc-js';
 
 function getStopCode(): string {
   return `
@@ -69,20 +70,20 @@ function saveSketchToFile(code: string, filePath: string): Promise<void> {
 let mainWindow: BrowserWindow | null;
 
 function createWindow(): void {
-    mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-        },
-    });
+  mainWindow = new BrowserWindow({
+    width: 1368,
+    height: 768,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
 
-    const startURL = isDev
-        ? 'http://localhost:1624'
-        : `file://${path.join(__dirname, '../app/dist/index.html')}`;
+  const startURL = isDev
+    ? 'http://localhost:1624'
+    : `file://${path.join(__dirname, '../app/dist/index.html')}`;
 
-    mainWindow.loadURL(startURL);
+  mainWindow.loadURL(startURL);
 
     // if (!isDev) {
     //   mainWindow.webContents.once('did-finish-load', () => {
@@ -93,59 +94,69 @@ function createWindow(): void {
     //     });
     // }
 
-    mainWindow.on('closed', () => {
-        mainWindow = null;
-    });
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
-app.on('ready', createWindow);
+// app.disableHardwareAcceleration();
+
+app.on('ready', () => {
+  createWindow();
+  startInputListener();
+
+  // 앱 종료 시 전역 단축키 해제
+  app.on('will-quit', () => {
+    globalShortcut.unregisterAll();
+  });
+});
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('activate', () => {
-    if (mainWindow === null) createWindow();
+  if (mainWindow === null) createWindow();
 });
 
 ipcMain.on('start-recording', (event, fileName) => {
     const request = new StartRequest( { filename: fileName } );
-    GrpcClient.MacroGrpcClient.startRequest(request);
+  GrpcClient.MacroGrpcClient.startRequest(request);
 });
 
 ipcMain.on('end-recording', () => {
-    const request = new StopRequest();
-    GrpcClient.MacroGrpcClient.stopRequest(request);
+  const request = new StopRequest();
+  GrpcClient.MacroGrpcClient.stopRequest(request);
 });
 
 ipcMain.on('remove-macro', (event, filenames) => {
   const request = new DeleteMacrosRequest( { filenames } );
- GrpcClient.MacroGrpcClient.deleteMacros(request);
+  GrpcClient.MacroGrpcClient.deleteMacros(request);
 });
 
 ipcMain.on('start-replay-debug', async (event, filename) => {
-    const call = GrpcClient.MacroGrpcClient.replayMacroDebug(new ReplayRequest({ filename }));
+  const call = GrpcClient.MacroGrpcClient.replayMacroDebug(new ReplayRequest({ filename }));
 
     call.on('data', (macroEvent) => {
       event.sender.send('macro-event', macroEvent.eventDescription);
-    });
+  });
 
-    call.on('end', () => {
+  call.on('end', () => {
         event.sender.send('replay-ended');
-    });
+  });
 
-    call.on('error', (error) => {
+  call.on('error', (error) => {
         event.sender.send('grpc-error', error.message);
-    });
+  });
 });
 
 // IPC handler to stop replaying the macro
 ipcMain.on('stop-replay', async (event) => {
-    const request = new StopReplayRequest();
-    try {
+  const request = new StopReplayRequest();
+  try {
       const code = getStopCode();
 
-      const response = await GrpcClient.MacroGrpcClient.stopReplay(request);
+    const response = await GrpcClient.MacroGrpcClient.stopReplay(request);
       // const port = await findArduinoPort();
       // console.log(port);
 
@@ -164,7 +175,7 @@ ipcMain.on('stop-replay', async (event) => {
       event.sender.send('replay-stopped', response);
 
       
-    } catch (error) {
+  } catch (error) {
       event.sender.send('grpc-error', error);
     }
   });
@@ -198,7 +209,7 @@ ipcMain.on('get-macro-detail', async (event, filename) => {
     const response = await GrpcClient.MacroGrpcClient.getMacroDetail(new GetMacroDetailRequest({ filename }));
     const events = convertMessage(response);
     event.sender.send('get-macro-detail-response', events, null);
-  } catch (error) {
+    } catch (error) {
     console.error('Error getting macro detail:', error);
     event.sender.send('get-macro-detail-response', null, error);
   }
@@ -225,6 +236,8 @@ function showPopupNotification(message: string) {
     y: height - 100,
     resizable: false,
     webPreferences: {
+      nodeIntegration: true,  // ipcRenderer를 HTML에서 사용하기 위해 필요
+      contextIsolation: false, // ipcRenderer 접근 허용
       preload: path.join(__dirname, 'popup-preload.js'), // 필요 시 프리로드 파일 설정
     },
   });
@@ -234,6 +247,7 @@ function showPopupNotification(message: string) {
 
   // 팝업 창에 메시지 전달
   popup.webContents.on('did-finish-load', () => {
+    console.log(message)
     popup.webContents.send('show-message', message);
   });
 
@@ -245,6 +259,88 @@ function showPopupNotification(message: string) {
   }, 3000); // 3초 후 자동 닫힘 (필요 시 조정)
 }
 
+let mouseCall: ClientWritableStream<MouseEvent> | null = null;
+let keyboardCall: ClientWritableStream<KeyboardEvent> | null = null;
+let reconnectingrRemote = false; // 재시도 중인지 여부를 추적
+
+ipcMain.on('start-remote-control', async (event) => {
+  connectRemoteControl(event);
+});
+
+function connectRemoteControl(event: Electron.IpcMainEvent) {
+  if (reconnectingrRemote) return; // 이미 재연결 중이면 중복 실행 방지
+
+  try {
+    mouseCall = GrpcClient.MacroGrpcClient.sendRemoteMouseEvents();
+    keyboardCall = GrpcClient.MacroGrpcClient.sendRemoteKeyEvents();
+
+    console.log('Remote control streams started.');
+
+    const checkAndRetry = () => {
+      if (!isStreamActive(mouseCall) || !isStreamActive(keyboardCall)) {
+        if (!reconnectingrRemote) {
+          reconnectingrRemote = true; // 재연결 플래그 설정
+          console.warn('Stream disconnected. Retrying...');
+
+          // 기존 스트림 종료
+          mouseCall?.end();
+          keyboardCall?.end();
+
+          // 일정 시간 후 재연결 시도
+  setTimeout(() => {
+            reconnectingrRemote = false; // 재연결 플래그 해제
+            connectRemoteControl(event); // 재연결
+          }, 1000); // 1초 후 재연결 시도
+        }
+      }
+    };
+
+    mouseCall.on('end', checkAndRetry);
+    mouseCall.on('error', checkAndRetry);
+
+    keyboardCall.on('end', checkAndRetry);
+    keyboardCall.on('error', checkAndRetry);
+
+  } catch (error) {
+    console.error('Error starting remote control:', error);
+  }
+}
+
+function isStreamActive(call: ClientWritableStream<any> | null): boolean {
+  return !!call && !call.writableEnded; // `writableEnded`가 false면 활성 상태
+}
+
+ipcMain.on('mouse-event', (event, mouseEventData) => {
+  if (mouseCall) {
+    const request: MouseEvent = new MouseEvent(mouseEventData);
+    // console.log(request);
+    mouseCall.write(request);
+  } else {
+    console.warn('mouseCall is not initialized');
+  }
+});
+
+// 키보드 이벤트 수신 및 gRPC 전송
+ipcMain.on('keyboard-event', (event, keyboardEventData) => {
+  if (keyboardCall) {
+    const request: KeyboardEvent = new KeyboardEvent(keyboardEventData);
+    keyboardCall.write(request);
+        } else {
+    console.warn('keyboardCall is not initialized');
+  }
+});
+
+ipcMain.on('stop-remote-control', () => {
+  if (mouseCall) {
+    mouseCall.end();
+    mouseCall = null;
+  }
+  if (keyboardCall) {
+    keyboardCall.end();
+    keyboardCall = null;
+  }
+});
+
 ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], repeatCount: number) => {
   try {
     const convertTasks = tasks.map(v => new ReplayTask({ ...v, repeatCount: v.repeatCount || 1 })); // Ensure repeatCount is set
@@ -252,13 +348,14 @@ ipcMain.on('start-complex-replay', async (event, tasks: ComplexReplayType[], rep
 
     call.on('data', (response: StatusResponse) => {
       event.sender.send('get-start-complex-replay-response', response, null);
-      showPopupNotification('매크로 실행 완료');
+      console.log(response)
+      showPopupNotification(response.message);
     });
     call.on('end', () => {
-        console.log("Streaming ended");
+      console.log("Streaming ended");
     });
     call.on('error', (err) => {
-        console.error("Error:", err);
+      console.error("Error:", err);
     });
   } catch (error) {
     console.error('Error getting macro detail:', error);
@@ -280,7 +377,7 @@ ipcMain.on('start-complex-replay-arduino', async (event, tasks:
       const events = convertMessage(response);
       const allKeyEvents = events.map(event => convertUint8ArrayToNumberArray(event.data));
       const allDelay = events.map(event => event.delay);
-      return {
+        return {
         hidReports: allKeyEvents,
         runTime: allDelay,
         delayAfter: value.delayAfter
@@ -338,6 +435,7 @@ ipcMain.on('request-update', async (event) => {
   call.on('error', (error) => {
       event.sender.send('update-grpc-error', error.message);
   });
+
 });
 
 let videoPopup: BrowserWindow | null;
@@ -376,6 +474,8 @@ function showVideoPopup() {
     console.log("Popup window closed");
   });
 
+  videoPopup.webContents.openDevTools();
+
     // 프로덕션 모드에서 '/video'로 이동하도록 설정
   if (!isDev) {
     videoPopup.webContents.once('did-finish-load', () => {
@@ -386,6 +486,141 @@ function showVideoPopup() {
       });
   }
 }
+
+let isFocused = true; // 포커스 상태 관리
+
+function setupGlobalShortcut() {
+  globalShortcut.register('Control+Alt+K', () => {
+    if (videoPopup && videoPopup.isFocused()) {
+      videoPopup.blur(); // 포커스 해제
+      isFocused = false;
+      videoPopup.webContents.send('focus-status-changed', isFocused); // 포커스 상태 전송
+    }
+  });
+}
+
+function startInputListener() {
+  if (!keyboardCall) {
+    keyboardCall = GrpcClient.MacroGrpcClient.sendRemoteKeyEvents();
+  }
+
+  let lastHidReport: Uint8Array | null = null; // 마지막 HID 리포트를 저장
+
+  app.on('browser-window-focus', () => {
+    console.log("Window focused: Enabling keyboard listener");
+    isFocused = true;
+    videoPopup?.webContents.send('focus-status-changed', isFocused);
+
+    videoPopup?.webContents.on('before-input-event', (event, input) => {
+      if (videoPopup && videoPopup.isFocused()) {
+        const { code, control, alt, type } = input;
+
+        // HID 리포트 생성 및 전송
+        const hidReport = generateHIDReport(input);
+        if (!lastHidReport || !compareReports(hidReport, lastHidReport)) {
+          sendKeyboardEvent(hidReport);
+          lastHidReport = hidReport;
+        }
+      }
+    });
+  });
+
+  app.on('browser-window-blur', () => {
+    console.log("Window unfocused: Pausing keyboard listener");
+    isFocused = false;
+    videoPopup?.webContents.send('focus-status-changed', isFocused); // 포커스 상태 전송
+  });
+}
+
+ipcMain.on('request-focus-status', (event) => {
+  event.reply('focus-status-changed', isFocused);
+});
+
+// 앱 초기화 시 단축키 등록
+app.whenReady().then(() => {
+  setupGlobalShortcut();
+});
+
+function mapKeyCodeToHIDKeyCode(code: string): number {
+  const HID_KEY_CODES: { [key: string]: number } = {
+    'KeyA': 0x04, 'KeyB': 0x05, 'KeyC': 0x06, 'KeyD': 0x07,
+    'KeyE': 0x08, 'KeyF': 0x09, 'KeyG': 0x0A, 'KeyH': 0x0B,
+    'KeyI': 0x0C, 'KeyJ': 0x0D, 'KeyK': 0x0E, 'KeyL': 0x0F,
+    'KeyM': 0x10, 'KeyN': 0x11, 'KeyO': 0x12, 'KeyP': 0x13,
+    'KeyQ': 0x14, 'KeyR': 0x15, 'KeyS': 0x16, 'KeyT': 0x17,
+    'KeyU': 0x18, 'KeyV': 0x19, 'KeyW': 0x1A, 'KeyX': 0x1B,
+    'KeyY': 0x1C, 'KeyZ': 0x1D,
+    'Digit1': 0x1E, 'Digit2': 0x1F, 'Digit3': 0x20, 'Digit4': 0x21,
+    'Digit5': 0x22, 'Digit6': 0x23, 'Digit7': 0x24, 'Digit8': 0x25,
+    'Digit9': 0x26, 'Digit0': 0x27,
+    'Enter': 0x28, 'Escape': 0x29, 'Backspace': 0x2A, 'Tab': 0x2B,
+    'Space': 0x2C, 'Minus': 0x2D, 'Equal': 0x2E, 'BracketLeft': 0x2F,
+    'BracketRight': 0x30, 'Backslash': 0x31, 'Semicolon': 0x33,
+    'Quote': 0x34, 'Backquote': 0x35, 'Comma': 0x36, 'Period': 0x37,
+    'Slash': 0x38, 'CapsLock': 0x39,
+    'F1': 0x3A, 'F2': 0x3B, 'F3': 0x3C, 'F4': 0x3D, 'F5': 0x3E,
+    'F6': 0x3F, 'F7': 0x40, 'F8': 0x41, 'F9': 0x42, 'F10': 0x43,
+    'F11': 0x44, 'F12': 0x45,
+    'Insert': 0x49, 'Home': 0x4A, 'PageUp': 0x4B, 'Delete': 0x4C,
+    'End': 0x4D, 'PageDown': 0x4E, 'ArrowRight': 0x4F,
+    'ArrowLeft': 0x50, 'ArrowDown': 0x51, 'ArrowUp': 0x52,
+    'NumLock': 0x53, 'NumpadDivide': 0x54, 'NumpadMultiply': 0x55,
+    'NumpadSubtract': 0x56, 'NumpadAdd': 0x57, 'NumpadEnter': 0x58,
+    'Numpad1': 0x59, 'Numpad2': 0x5A, 'Numpad3': 0x5B, 'Numpad4': 0x5C,
+    'Numpad5': 0x5D, 'Numpad6': 0x5E, 'Numpad7': 0x5F, 'Numpad8': 0x60,
+    'Numpad9': 0x61, 'Numpad0': 0x62, 'NumpadDecimal': 0x63,
+    'ContextMenu': 0x65, 'Power': 0x66,
+    // 필요 시 추가적인 키 코드를 여기에 추가
+  };
+
+  return HID_KEY_CODES[code] || 0x00; // 매핑되지 않은 키는 0x00 반환
+}
+
+// HID 리포트를 생성
+function generateHIDReport(input: Electron.Input): Uint8Array {
+  const { code, control, shift, alt, meta, type } = input;
+  const isKeyDown = type === 'keyDown';
+  const modifier = (control ? 0x01 : 0) | (shift ? 0x02 : 0) | (alt ? 0x04 : 0) | (meta ? 0x08 : 0);
+  const hidKeyCode = mapKeyCodeToHIDKeyCode(code);
+
+  if (isKeyDown) {
+    return new Uint8Array([modifier, 0x00, hidKeyCode, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  } else {
+    // Key release 리포트: 모든 키 값을 0으로 설정
+    return new Uint8Array([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  }
+}
+
+// HID 리포트 비교 함수
+function compareReports(report1: Uint8Array, report2: Uint8Array): boolean {
+  if (report1.length !== report2.length) return false;
+  for (let i = 0; i < report1.length; i++) {
+    if (report1[i] !== report2[i]) return false;
+  }
+  return true;
+}
+
+// gRPC를 통해 HID 이벤트 전송
+function sendKeyboardEvent(hidReport: Uint8Array) {
+  if (keyboardCall) {
+    const request: KeyboardEvent = new KeyboardEvent({ data: Buffer.from(hidReport) });
+    keyboardCall.write(request);
+  } else {
+    console.warn('keyboardCall is not initialized');
+  }
+}
+
+function sendMouseEvent(mouseEventData: any) {
+  if (mouseCall) {
+    const request: MouseEvent = new MouseEvent(mouseEventData);
+    // console.log(request);
+    mouseCall.write(request);
+  } else {
+    console.warn('mouseCall is not initialized');
+  }
+}
+
+let isRemoteRetrying = false;
 
 ipcMain.on('view-video-stream', async (event) => {
   showVideoPopup();
@@ -533,3 +768,4 @@ ipcMain.on('export-profile', async (event, filename) => {
       });
   }
 });
+
